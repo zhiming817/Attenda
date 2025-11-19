@@ -1,0 +1,35 @@
+[package]
+name = "rust_backend"
+version = "0.0.1"
+edition = "2024"
+
+# 添加多个 binary 配置
+[[bin]]
+name = "rust_backend"
+path = "src/main.rs"
+
+
+[dependencies]
+dotenv = "0.15.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+tokio = { version = "1.48.0", features = ["full"] }
+
+# Database (测试 SeaORM 与 x402-sdk 0.1.4 的兼容性)
+sea-orm = { version = "1.1", features = ["sqlx-mysql", "runtime-tokio-native-tls", "macros", "with-chrono", "with-uuid"] }
+
+# 工具库
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+anyhow = "1.0"
+thiserror = "1.0"
+rand = "0.8"
+sha2 = "0.10"
+base64 = "0.22"
+regex = "1.0"
+hex = "0.4"
+bs58 = "0.5"
+# 日志
+log = "0.4"
+env_logger = "0.11"
+axum = "0.8.7"
