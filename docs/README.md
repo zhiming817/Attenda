@@ -1,6 +1,12 @@
 
+# Attenda
+
+**Show up. Be recognized.**
+
+A decentralized event and ticketing platform powered by Sui smart contracts, Walrus storage, and Seal encryption.
+
 ## Overview
-Today’s event registration platforms like Luma, Eventbrite, and Google Forms rely on centralized data models and email-based access. Tickets, confirmations, and event details are managed by intermediaries.
+Today's event registration platforms like Luma, Eventbrite, and Google Forms rely on centralized data models and email-based access. Tickets, confirmations, and event details are managed by intermediaries.
 
 
 
