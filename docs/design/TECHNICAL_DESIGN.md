@@ -81,7 +81,7 @@ User Wallet/ZkLogin
 
 - Event
   - id: on-chain id
-  - walrus_site_ref: string (Walrus site URL)
+  - walrus_blob_id: string (Walrus site URL)
   - organizer: address
   - metadata: minimal on-chain索引（其余放 Walrus）
 
@@ -100,7 +100,7 @@ User Wallet/ZkLogin
 
 1) 活动创建（组织者）
   - 组织者登录前端 -> 填写活动元数据并上传富媒体到 Walrus（公开部分可直接存储）。
-  - 设置票种 -> 为每张票生成加密元数据并上传 Seal 加密的 blob -> 在链上调用 EventRegistry 创建活动并记录 walrus_site_ref。
+  - 设置票种 -> 为每张票生成加密元数据并上传 Seal 加密的 blob -> 在链上调用 EventRegistry 创建活动并记录 walrus_blob_id。
 
 2) 用户报名与门票铸造
   - 用户使用 ZkLogin 或钱包进行身份验证。
