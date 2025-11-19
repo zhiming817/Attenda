@@ -1,0 +1,153 @@
+/// Module: EventRegistry
+/// 管理活动索引、状态与组织者权限
+module attenda::event_registry {
+    use sui::event;
+    use std::string::{Self, String};
+
+    /// 活动状态枚举
+    const STATUS_ACTIVE: u8 = 0;
+    const STATUS_CLOSED: u8 = 2;
+    const STATUS_CANCELLED: u8 = 3;
+
+    /// 错误码
+    const ERR_NOT_ORGANIZER: u64 = 1000;
+    const ERR_EVENT_CLOSED: u64 = 1001;
+    const ERR_INVALID_STATUS: u64 = 1002;
+    const ERR_CAPACITY_FULL: u64 = 1003;
+
+    /// 活动信息结构体
+    public struct EventInfo has key, store {
+        id: UID,
+        organizer: address,
+        walrus_blob_id: String,
+        capacity: u64,
+        num_tickets_sold: u64,
+        status: u8,
+        created_at: u64,
+        updated_at: u64,
+    }
+
+    /// 活动创建事件
+    public struct EventCreated has copy, drop {
+        event_id: address,
+        organizer: address,
+        walrus_blob_id: String,
+        capacity: u64,
+    }
+
+    /// 活动更新事件
+    public struct EventUpdated has copy, drop {
+        event_id: address,
+        updated_by: address,
+    }
+
+    /// 活动状态变更事件
+    public struct EventStatusChanged has copy, drop {
+        event_id: address,
+        old_status: u8,
+        new_status: u8,
+        changed_by: address,
+    }
+
+    /// 创建活动
+    public entry fun create_event(
+        walrus_blob_id: vector<u8>,
+        capacity: u64,
+        ctx: &mut TxContext
+    ) {
+        let organizer = tx_context::sender(ctx);
+        let event_info = EventInfo {
+            id: object::new(ctx),
+            organizer,
+            walrus_blob_id: string::utf8(walrus_blob_id),
+            capacity,
+            num_tickets_sold: 0,
+            status: STATUS_ACTIVE,
+            created_at: tx_context::epoch(ctx),
+            updated_at: tx_context::epoch(ctx),
+        };
+
+        let event_id = object::uid_to_address(&event_info.id);
+        
+        event::emit(EventCreated {
+            event_id,
+            organizer,
+            walrus_blob_id: event_info.walrus_blob_id,
+            capacity,
+        });
+
+        transfer::share_object(event_info);
+    }
+
+    /// 更新活动（仅组织者可调用）
+    public entry fun update_event(
+        event: &mut EventInfo,
+        new_walrus_blob_id: vector<u8>,
+        new_capacity: u64,
+        ctx: &mut TxContext
+    ) {
+        let sender = tx_context::sender(ctx);
+        assert!(sender == event.organizer, ERR_NOT_ORGANIZER);
+        assert!(event.status != STATUS_CLOSED && event.status != STATUS_CANCELLED, ERR_EVENT_CLOSED);
+
+        event.walrus_blob_id = string::utf8(new_walrus_blob_id);
+        event.capacity = new_capacity;
+        event.updated_at = tx_context::epoch(ctx);
+
+        let event_id = object::uid_to_address(&event.id);
+        event::emit(EventUpdated {
+            event_id,
+            updated_by: sender,
+        });
+    }
+
+    /// 设置活动状态
+    public entry fun set_status(
+        event: &mut EventInfo,
+        new_status: u8,
+        ctx: &mut TxContext
+    ) {
+        let sender = tx_context::sender(ctx);
+        assert!(sender == event.organizer, ERR_NOT_ORGANIZER);
+        assert!(new_status <= STATUS_CANCELLED, ERR_INVALID_STATUS);
+
+        let old_status = event.status;
+        event.status = new_status;
+        event.updated_at = tx_context::epoch(ctx);
+
+        let event_id = object::uid_to_address(&event.id);
+        event::emit(EventStatusChanged {
+            event_id,
+            old_status,
+            new_status,
+            changed_by: sender,
+        });
+    }
+
+    /// 增加已售票数（仅由 TicketNFT 模块调用）
+    public(package) fun increment_tickets_sold(event: &mut EventInfo) {
+        assert!(event.num_tickets_sold < event.capacity, ERR_CAPACITY_FULL);
+        event.num_tickets_sold = event.num_tickets_sold + 1;
+    }
+
+    /// 获取活动信息（只读）
+    public fun get_organizer(event: &EventInfo): address {
+        event.organizer
+    }
+
+    public fun get_capacity(event: &EventInfo): u64 {
+        event.capacity
+    }
+
+    public fun get_tickets_sold(event: &EventInfo): u64 {
+        event.num_tickets_sold
+    }
+
+    public fun get_status(event: &EventInfo): u8 {
+        event.status
+    }
+
+    public fun is_active(event: &EventInfo): bool {
+        event.status == STATUS_ACTIVE
+    }
+}
