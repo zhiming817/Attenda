@@ -4,6 +4,7 @@ import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-ki
 import { Transaction } from '@mysten/sui/transactions';
 import Navbar from '../../layout/Navbar.jsx';
 import Footer from '../../layout/Footer.jsx';
+import { uploadToWalrus } from '../../utils/walrus.js';
 
 const PACKAGE_ID = '0x5a29cc03847b88c5225fb960e6a6ada5ef7ff9fa57494e69a8d831d82f7a5f21';
 
@@ -60,18 +61,29 @@ export default function CreateEvent() {
         createdAt: new Date().toISOString(),
       };
 
-      // TODO: 实际项目中应该上传到 Walrus
-      // 这里暂时用 JSON 字符串模拟 Walrus Blob ID
-      const walrusStub = `walrus://event-${Date.now()}`;
-      const walrusBlobId = new TextEncoder().encode(walrusStub);
-
+      // 上传 eventMetadata 到 Walrus
+      console.log('Uploading event metadata to Walrus...');
+      const metadataJson = JSON.stringify(eventMetadata);
+      const metadataBlob = new Blob([metadataJson], { type: 'application/json' });
+      
+      const uploadResult = await uploadToWalrus(metadataBlob, {
+        type: 'event-metadata',
+        title: formData.title,
+      });
+      
+      console.log('Upload successful:', uploadResult);
+      const walrusBlobId = uploadResult.blobId;
+      
+      // 将 blobId 字符串转换为 u8 数组
+      const walrusBlobIdBytes = new TextEncoder().encode(walrusBlobId);
+      
       // 创建交易
       const tx = new Transaction();
       
       tx.moveCall({
         target: `${PACKAGE_ID}::event_registry::create_event`,
         arguments: [
-          tx.pure.vector('u8', Array.from(walrusBlobId)),
+          tx.pure.vector('u8', Array.from(walrusBlobIdBytes)),
           tx.pure.u64(parseInt(formData.capacity)),
         ],
       });

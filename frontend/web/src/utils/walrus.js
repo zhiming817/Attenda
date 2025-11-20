@@ -82,7 +82,7 @@ export async function uploadToWalrus(blob, metadata = {}, signer = null) {
     const epochs = import.meta.env.VITE_WALRUS_EPOCHS
       ? Number(import.meta.env.VITE_WALRUS_EPOCHS)
       : 5;
-
+    console.log('⏳ Retention epochs:', epochs);
     // 如果传入 signer，优先使用 SDK 的 writeBlob（需要 signer）
     if (signer) {
       try {
