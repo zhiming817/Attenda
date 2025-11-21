@@ -4,7 +4,7 @@ import { useCurrentAccount, useSuiClient } from '@mysten/dapp-kit';
 import Navbar from '../../layout/Navbar.jsx';
 import Footer from '../../layout/Footer.jsx';
 
-const PACKAGE_ID = '0x5a29cc03847b88c5225fb960e6a6ada5ef7ff9fa57494e69a8d831d82f7a5f21';
+const PACKAGE_ID = import.meta.env.VITE_PACKAGE_ID || '0x5a29cc03847b88c5225fb960e6a6ada5ef7ff9fa57494e69a8d831d82f7a5f21';
 
 export default function MyTickets() {
   const navigate = useNavigate();
@@ -38,13 +38,13 @@ export default function MyTickets() {
 
       const ticketList = result.data.map(obj => {
         const fields = obj.data?.content?.fields || {};
+        console.log('Ticket fields:', fields); // 调试日志
         return {
           id: obj.data.objectId,
           eventId: fields.event_id,
-          ticketType: fields.ticket_type,
-          isUsed: fields.is_used || false,
-          mintedAt: parseInt(fields.minted_at || '0'),
-          usedAt: fields.used_at ? parseInt(fields.used_at) : null,
+          ticketType: fields.ticket_type !== undefined ? fields.ticket_type : 0,
+          status: fields.status !== undefined ? parseInt(fields.status) : 0,
+          createdAt: fields.created_at ? parseInt(fields.created_at) : 0,
         };
       });
 
@@ -123,15 +123,15 @@ export default function MyTickets() {
               </div>
               <div className="bg-white rounded-xl shadow-lg border-2 border-green-200 p-6">
                 <div className="text-4xl font-black text-green-600 mb-2">
-                  {tickets.filter(t => !t.isUsed).length}
+                  {tickets.filter(t => t.status === 0).length}
                 </div>
-                <div className="text-gray-600 font-medium">Unused Tickets</div>
+                <div className="text-gray-600 font-medium">Valid Tickets</div>
               </div>
               <div className="bg-white rounded-xl shadow-lg border-2 border-blue-200 p-6">
                 <div className="text-4xl font-black text-blue-600 mb-2">
-                  {tickets.filter(t => t.isUsed).length}
+                  {tickets.filter(t => t.status === 1).length}
                 </div>
-                <div className="text-gray-600 font-medium">Attended Events</div>
+                <div className="text-gray-600 font-medium">Used Tickets</div>
               </div>
             </div>
 
@@ -145,10 +145,15 @@ export default function MyTickets() {
                   {/* Ticket Header */}
                   <div className="bg-gradient-to-br from-orange-400 to-red-500 p-6 text-white relative">
                     <div className="text-5xl mb-4">🎫</div>
-                    <div className="font-black text-2xl mb-2">{ticket.ticketType}</div>
-                    {ticket.isUsed && (
+                    <div className="font-black text-2xl mb-2">Ticket Type {ticket.ticketType}</div>
+                    {ticket.status === 1 && (
                       <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
                         ✓ USED
+                      </div>
+                    )}
+                    {ticket.status === 2 && (
+                      <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                        ✗ REVOKED
                       </div>
                     )}
                   </div>
@@ -170,28 +175,32 @@ export default function MyTickets() {
                     </div>
 
                     <div>
-                      <div className="text-xs text-gray-500 font-medium mb-1">Minted At</div>
+                      <div className="text-xs text-gray-500 font-medium mb-1">Created At</div>
                       <div className="text-sm text-gray-900">
-                        {new Date(ticket.mintedAt).toLocaleString()}
+                        {ticket.createdAt > 0 ? `Epoch ${ticket.createdAt}` : 'N/A'}
                       </div>
                     </div>
 
-                    {ticket.isUsed && ticket.usedAt && (
-                      <div>
-                        <div className="text-xs text-gray-500 font-medium mb-1">Used At</div>
-                        <div className="text-sm text-gray-900">
-                          {new Date(ticket.usedAt).toLocaleString()}
-                        </div>
+                    <div>
+                      <div className="text-xs text-gray-500 font-medium mb-1">Status</div>
+                      <div className="text-sm text-gray-900">
+                        {ticket.status === 0 ? '✅ Valid' : ticket.status === 1 ? '🎟️ Used' : '❌ Revoked'}
                       </div>
-                    )}
+                    </div>
 
                     {/* Actions */}
-                    <div className="pt-4 border-t border-gray-200">
+                    <div className="pt-4 border-t border-gray-200 space-y-3">
                       <button
                         onClick={() => navigate(`/events/${ticket.eventId}`)}
                         className="w-full px-4 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-bold hover:from-orange-600 hover:to-red-700 transition-all"
                       >
                         View Event
+                      </button>
+                      <button
+                        onClick={() => navigate(`/tickets/${ticket.id}/manage`)}
+                        className="w-full px-4 py-3 border-2 border-orange-500 text-orange-600 rounded-lg font-bold hover:bg-orange-50 transition-all"
+                      >
+                        🔧 Manage Ticket
                       </button>
                     </div>
                   </div>

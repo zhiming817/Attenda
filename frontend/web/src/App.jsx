@@ -9,6 +9,7 @@ import EventList from './pages/events/EventList.jsx';
 import EventDetail from './pages/events/EventDetail.jsx';
 import MyEvents from './pages/events/MyEvents.jsx';
 import MyTickets from './pages/events/MyTickets.jsx';
+import TicketManagement from './pages/events/TicketManagement.jsx';
 
 import PageLayout from './layout/PageLayout.jsx';
 
@@ -34,6 +35,7 @@ function App() {
               <Route path="/events/:eventId" element={<EventDetail />} />
               <Route path="/events/my" element={<MyEvents />} />
               <Route path="/events/tickets" element={<MyTickets />} />
+              <Route path="/tickets/:ticketId/manage" element={<TicketManagement />} />
             </Routes>
           </HashRouter>
         </WalletProvider>
