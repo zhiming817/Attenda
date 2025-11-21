@@ -3,6 +3,7 @@
 module attenda::event_registry {
     use sui::event;
     use sui::clock::{Self, Clock};
+    use sui::table::{Self, Table};
     use std::string::{Self, String};
 
     /// 活动状态枚举
@@ -26,6 +27,8 @@ module attenda::event_registry {
         status: u8,
         created_at: u64,
         updated_at: u64,
+        /// 记录已注册的参与者
+        attendees: Table<address, bool>,
     }
 
     /// 活动创建事件
@@ -68,6 +71,7 @@ module attenda::event_registry {
             status: STATUS_ACTIVE,
             created_at: now_ms,
             updated_at: now_ms,
+            attendees: table::new(ctx),
         };
 
         let event_id = object::uid_to_address(&event_info.id);
@@ -133,6 +137,16 @@ module attenda::event_registry {
     public(package) fun increment_tickets_sold(event: &mut EventInfo) {
         assert!(event.num_tickets_sold < event.capacity, ERR_CAPACITY_FULL);
         event.num_tickets_sold = event.num_tickets_sold + 1;
+    }
+
+    /// 检查用户是否已注册
+    public(package) fun has_registered(event: &EventInfo, user: address): bool {
+        table::contains(&event.attendees, user)
+    }
+
+    /// 标记用户已注册
+    public(package) fun mark_registered(event: &mut EventInfo, user: address) {
+        table::add(&mut event.attendees, user, true);
     }
 
     /// 获取活动信息（只读）

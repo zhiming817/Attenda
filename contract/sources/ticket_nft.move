@@ -3,8 +3,14 @@
 module attenda::ticket_nft {
     use sui::event;
     use sui::clock::{Self, Clock};
-    use std::string::String;
+    use sui::display;
+    use sui::package;
+    use sui::url::{Self, Url};
+    use std::string::{Self, String};
     use attenda::event_registry::{Self, EventInfo};
+
+    /// One-Time-Witness for Display
+    public struct TICKET_NFT has drop {}
 
     /// 门票状态
     const STATUS_VALID: u8 = 0;
@@ -15,6 +21,7 @@ module attenda::ticket_nft {
     const ERR_NOT_OWNER: u64 = 2000;
     const ERR_TICKET_INVALID: u64 = 2001;
     const ERR_ALREADY_USED: u64 = 2003;
+    const ERR_ALREADY_REGISTERED: u64 = 2004;
 
     /// 门票 NFT 结构体
     public struct Ticket has key, store {
@@ -26,6 +33,10 @@ module attenda::ticket_nft {
         ticket_type: u8,
         status: u8,
         created_at: u64,
+        /// 用于 Display
+        name: String,
+        description: String,
+        url: Url,
     }
 
     /// 门票铸造事件
@@ -56,6 +67,33 @@ module attenda::ticket_nft {
         used_by: address,
     }
 
+    /// 初始化函数，创建 Display
+    fun init(otw: TICKET_NFT, ctx: &mut TxContext) {
+        let keys = vector[
+            string::utf8(b"name"),
+            string::utf8(b"description"),
+            string::utf8(b"image_url"),
+            string::utf8(b"project_url"),
+            string::utf8(b"creator"),
+        ];
+
+        let values = vector[
+            string::utf8(b"{name}"),
+            string::utf8(b"{description}"),
+            string::utf8(b"{url}"),
+            string::utf8(b"https://attenda.io"),
+            string::utf8(b"Attenda"),
+        ];
+
+        let publisher = package::claim(otw, ctx);
+        let display = display::new_with_fields<Ticket>(
+            &publisher, keys, values, ctx
+        );
+
+        transfer::public_transfer(publisher, tx_context::sender(ctx));
+        transfer::public_transfer(display, tx_context::sender(ctx));
+    }
+
     /// 铸造门票
     public entry fun mint_ticket(
         event: &mut EventInfo,
@@ -63,11 +101,20 @@ module attenda::ticket_nft {
         walrus_blob_ref: vector<u8>,
         encrypted_meta_hash: vector<u8>,
         ticket_type: u8,
+        name: vector<u8>,
+        description: vector<u8>,
+        url: vector<u8>,
         clock: &Clock,
         ctx: &mut TxContext
     ) {
         // 检查活动是否激活
         assert!(event_registry::is_active(event), ERR_TICKET_INVALID);
+        
+        // 检查用户是否已经注册过此活动
+        assert!(!event_registry::has_registered(event, to), ERR_ALREADY_REGISTERED);
+        
+        // 标记用户已注册
+        event_registry::mark_registered(event, to);
         
         // 增加已售票数
         event_registry::increment_tickets_sold(event);
@@ -79,11 +126,14 @@ module attenda::ticket_nft {
             id: sui::object::new(ctx),
             event_id: event_addr,
             owner: to,
-            walrus_blob_ref: std::string::utf8(walrus_blob_ref),
+            walrus_blob_ref: string::utf8(walrus_blob_ref),
             encrypted_meta_hash,
             ticket_type,
             status: STATUS_VALID,
             created_at: now_ms,
+            name: string::utf8(name),
+            description: string::utf8(description),
+            url: url::new_unsafe_from_bytes(url),
         };
 
         let ticket_id = sui::object::uid_to_address(&ticket.id);
@@ -95,7 +145,7 @@ module attenda::ticket_nft {
             ticket_type,
         });
 
-        sui::transfer::public_transfer(ticket, to);
+        transfer::public_transfer(ticket, to);
     }
 
     /// 转移门票（可选限制转让）

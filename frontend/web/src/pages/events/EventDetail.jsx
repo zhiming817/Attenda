@@ -82,8 +82,13 @@ export default function EventDetail() {
     try {
       const tx = new Transaction();
       
+      const ticketName = `Attenda Ticket - General Admission`;
+      const ticketDescription = `Event ticket NFT on Attenda platform. This NFT grants access to the event and serves as proof of attendance.`;
+      const ticketImageUrl = `https://aquamarine-peculiar-marsupial-246.mypinata.cloud/ipfs/bafkreia3bnaypv32gr2m45amqdnaeh57rpfnazljfug7jdiujnn6nxgxg4/`;
+      
       // 调用 mint_ticket 函数
-      // mint_ticket(event: &mut EventInfo, to: address, walrus_blob_ref: vector<u8>, encrypted_meta_hash: vector<u8>, ticket_type: u8, clock: &Clock, ctx: &mut TxContext)
+      // mint_ticket(event: &mut EventInfo, to: address, walrus_blob_ref: vector<u8>, encrypted_meta_hash: vector<u8>, 
+      //             ticket_type: u8, name: vector<u8>, description: vector<u8>, url: vector<u8>, clock: &Clock, ctx: &mut TxContext)
       tx.moveCall({
         target: `${PACKAGE_ID}::ticket_nft::mint_ticket`,
         arguments: [
@@ -92,6 +97,9 @@ export default function EventDetail() {
           tx.pure.vector('u8', Array.from(new TextEncoder().encode('ticket-metadata'))), // walrus_blob_ref: vector<u8>
           tx.pure.vector('u8', []), // encrypted_meta_hash: vector<u8> (空数组表示无加密)
           tx.pure.u8(0), // ticket_type: u8 (0 = 普通票)
+          tx.pure.vector('u8', Array.from(new TextEncoder().encode(ticketName))), // name: vector<u8>
+          tx.pure.vector('u8', Array.from(new TextEncoder().encode(ticketDescription))), // description: vector<u8>
+          tx.pure.vector('u8', Array.from(new TextEncoder().encode(ticketImageUrl))), // url: vector<u8>
           tx.object('0x6'), // clock: &Clock
         ],
       });
