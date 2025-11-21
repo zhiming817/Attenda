@@ -2,6 +2,7 @@
 /// 门票 NFT 铸造、转移与状态管理
 module attenda::ticket_nft {
     use sui::event;
+    use sui::clock::{Self, Clock};
     use std::string::String;
     use attenda::event_registry::{Self, EventInfo};
 
@@ -62,6 +63,7 @@ module attenda::ticket_nft {
         walrus_blob_ref: vector<u8>,
         encrypted_meta_hash: vector<u8>,
         ticket_type: u8,
+        clock: &Clock,
         ctx: &mut TxContext
     ) {
         // 检查活动是否激活
@@ -71,6 +73,7 @@ module attenda::ticket_nft {
         event_registry::increment_tickets_sold(event);
 
         let event_addr = sui::object::id_to_address(&sui::object::id(event));
+        let now_ms = clock::timestamp_ms(clock);
         
         let ticket = Ticket {
             id: sui::object::new(ctx),
@@ -80,7 +83,7 @@ module attenda::ticket_nft {
             encrypted_meta_hash,
             ticket_type,
             status: STATUS_VALID,
-            created_at: sui::tx_context::epoch(ctx),
+            created_at: now_ms,
         };
 
         let ticket_id = sui::object::uid_to_address(&ticket.id);

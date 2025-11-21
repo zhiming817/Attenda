@@ -2,6 +2,7 @@
 /// 管理活动索引、状态与组织者权限
 module attenda::event_registry {
     use sui::event;
+    use sui::clock::{Self, Clock};
     use std::string::{Self, String};
 
     /// 活动状态枚举
@@ -53,9 +54,11 @@ module attenda::event_registry {
     public entry fun create_event(
         walrus_blob_id: vector<u8>,
         capacity: u64,
+        clock: &Clock,
         ctx: &mut TxContext
     ) {
         let organizer = tx_context::sender(ctx);
+        let now_ms = clock::timestamp_ms(clock);
         let event_info = EventInfo {
             id: object::new(ctx),
             organizer,
@@ -63,8 +66,8 @@ module attenda::event_registry {
             capacity,
             num_tickets_sold: 0,
             status: STATUS_ACTIVE,
-            created_at: tx_context::epoch(ctx),
-            updated_at: tx_context::epoch(ctx),
+            created_at: now_ms,
+            updated_at: now_ms,
         };
 
         let event_id = object::uid_to_address(&event_info.id);
@@ -84,6 +87,7 @@ module attenda::event_registry {
         event: &mut EventInfo,
         new_walrus_blob_id: vector<u8>,
         new_capacity: u64,
+        clock: &Clock,
         ctx: &mut TxContext
     ) {
         let sender = tx_context::sender(ctx);
@@ -92,7 +96,7 @@ module attenda::event_registry {
 
         event.walrus_blob_id = string::utf8(new_walrus_blob_id);
         event.capacity = new_capacity;
-        event.updated_at = tx_context::epoch(ctx);
+        event.updated_at = clock::timestamp_ms(clock);
 
         let event_id = object::uid_to_address(&event.id);
         event::emit(EventUpdated {
@@ -105,6 +109,7 @@ module attenda::event_registry {
     public entry fun set_status(
         event: &mut EventInfo,
         new_status: u8,
+        clock: &Clock,
         ctx: &mut TxContext
     ) {
         let sender = tx_context::sender(ctx);
@@ -113,7 +118,7 @@ module attenda::event_registry {
 
         let old_status = event.status;
         event.status = new_status;
-        event.updated_at = tx_context::epoch(ctx);
+        event.updated_at = clock::timestamp_ms(clock);
 
         let event_id = object::uid_to_address(&event.id);
         event::emit(EventStatusChanged {

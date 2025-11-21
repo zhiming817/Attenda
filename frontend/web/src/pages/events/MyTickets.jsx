@@ -177,7 +177,7 @@ export default function MyTickets() {
                     <div>
                       <div className="text-xs text-gray-500 font-medium mb-1">Created At</div>
                       <div className="text-sm text-gray-900">
-                        {ticket.createdAt > 0 ? `Epoch ${ticket.createdAt}` : 'N/A'}
+                        {ticket.createdAt > 0 ? new Date(ticket.createdAt).toLocaleString() : 'N/A'}
                       </div>
                     </div>
 

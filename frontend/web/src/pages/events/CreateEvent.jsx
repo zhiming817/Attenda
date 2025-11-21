@@ -85,6 +85,7 @@ export default function CreateEvent() {
         arguments: [
           tx.pure.vector('u8', Array.from(walrusBlobIdBytes)),
           tx.pure.u64(parseInt(formData.capacity)),
+          tx.object('0x6'), // Clock 对象
         ],
       });
 
