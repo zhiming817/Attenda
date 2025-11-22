@@ -4,6 +4,7 @@ import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@
 import { Transaction } from '@mysten/sui/transactions';
 import Navbar from '../../layout/Navbar.jsx';
 import Footer from '../../layout/Footer.jsx';
+import { createEncryptedTicketMetadata } from '../../utils/ticketEncryption.js';
 
 const PACKAGE_ID = import.meta.env.VITE_PACKAGE_ID || '0x5a29cc03847b88c5225fb960e6a6ada5ef7ff9fa57494e69a8d831d82f7a5f21';
 const WALRUS_TICKET_IMG_URL = import.meta.env.VITE_WALRUS_TICKET_IMG_URL;
@@ -45,6 +46,27 @@ export default function EventDetail() {
       }
 
       const fields = eventObj.data.content?.fields || {};
+      
+      // policy_id 和 policy_cap_id 都是 ID 类型，需要从 fields 中提取
+      let policyId = null;
+      let policyCapId = null;
+      
+      if (fields.policy_id) {
+        policyId = typeof fields.policy_id === 'string' 
+          ? fields.policy_id 
+          : fields.policy_id.id || fields.policy_id;
+      }
+      
+      if (fields.policy_cap_id) {
+        policyCapId = typeof fields.policy_cap_id === 'string' 
+          ? fields.policy_cap_id 
+          : fields.policy_cap_id.id || fields.policy_cap_id;
+      }
+      
+      console.log('📋 Event fields:', fields);
+      console.log('🔑 Policy ID:', policyId);
+      console.log('🔑 PolicyCap ID:', policyCapId);
+      
       setEvent({
         id: eventId,
         organizer: fields.organizer,
@@ -54,6 +76,8 @@ export default function EventDetail() {
         status: parseInt(fields.status || '0'),
         createdAt: parseInt(fields.created_at || '0'),
         updatedAt: parseInt(fields.updated_at || '0'),
+        policyId: policyId, // Seal 访问策略 ID (shared object)
+        policyCapId: policyCapId, // PolicyCap ID (owned object)
       });
     } catch (error) {
       console.error('Error loading event:', error);
@@ -83,22 +107,72 @@ export default function EventDetail() {
     setError('');
 
     try {
+      // Step 1: 创建并加密门票元数据
+      console.log('🎫 Creating encrypted ticket metadata...');
+      
+      const ticketId = `ticket-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      
+      // 先获取 policyId（用于加密）
+      const policyId = event.policyId;
+      const policyCapId = event.policyCapId;
+      
+      if (!policyId) {
+        throw new Error('PolicyId not found in event. Please refresh the page.');
+      }
+      
+      if (!policyCapId) {
+        throw new Error('PolicyCapId not found in event. This event may have been created with an older version of the contract.');
+      }
+      
+      console.log('🔑 Using policyId for encryption:', policyId);
+      console.log('🔑 Using policyCapId:', policyCapId);
+      
+      const encryptedTicketData = await createEncryptedTicketMetadata({
+        eventId: eventId,
+        ticketId: ticketId,
+        eventTitle: `Event ${eventId.slice(0, 8)}`,
+        location: 'Decentralized Event Space',
+        startTime: new Date(event.createdAt).toISOString(),
+        accessLink: `https://attenda.app/events/${eventId}/access`,
+        holderAddress: currentAccount.address,
+        policyId: policyId, // 传递 policy ID 用于加密
+      });
+
+      console.log('✅ Encrypted metadata created:', encryptedTicketData);
+
+      // Step 2: 准备铸造门票 NFT
       const tx = new Transaction();
       
-      const ticketName = `Attenda Ticket - General Admission`;
-      const ticketDescription = `Event ticket NFT on Attenda platform. This NFT grants access to the event and serves as proof of attendance.`;
+      const ticketName = `Attenda Ticket - ${eventId.slice(0, 8)}`;
+      const ticketDescription = `Encrypted NFT ticket with Seal-protected metadata. Includes QR code, location, and access details.`;
       const ticketImageUrl = WALRUS_TICKET_IMG_URL;
       
+      // 将 Walrus Blob ID 转换为字节数组
+      const walrusBlobIdBytes = new TextEncoder().encode(encryptedTicketData.blobId);
+      
       // 调用 mint_ticket 函数
-      // mint_ticket(event: &mut EventInfo, to: address, walrus_blob_ref: vector<u8>, encrypted_meta_hash: vector<u8>, 
-      //             ticket_type: u8, name: vector<u8>, description: vector<u8>, url: vector<u8>, clock: &Clock, ctx: &mut TxContext)
+      // mint_ticket(event: &mut EventInfo, policy: &mut TicketPolicy, cap: &PolicyCap,
+      //             to: address, walrus_blob_ref: vector<u8>, encrypted_meta_hash: vector<u8>, 
+      //             ticket_type: u8, name: vector<u8>, description: vector<u8>, 
+      //             url: vector<u8>, clock: &Clock, ctx: &mut TxContext)
+      
+      console.log('📦 Building transaction with arguments:');
+      console.log('  - eventId:', eventId);
+      console.log('  - policyId:', policyId);
+      console.log('  - policyCapId:', policyCapId);
+      console.log('  - recipient:', currentAccount.address);
+      console.log('  - walrusBlobId:', encryptedTicketData.blobId);
+      console.log('  - metadataHash length:', encryptedTicketData.metadataHash.length);
+      
       tx.moveCall({
         target: `${PACKAGE_ID}::ticket_nft::mint_ticket`,
         arguments: [
           tx.object(eventId), // event: &mut EventInfo
+          tx.object(policyId), // policy: &mut TicketPolicy
+          tx.object(policyCapId), // cap: &PolicyCap
           tx.pure.address(currentAccount.address), // to: address
-          tx.pure.vector('u8', Array.from(new TextEncoder().encode('ticket-metadata'))), // walrus_blob_ref: vector<u8>
-          tx.pure.vector('u8', []), // encrypted_meta_hash: vector<u8> (空数组表示无加密)
+          tx.pure.vector('u8', Array.from(walrusBlobIdBytes)), // walrus_blob_ref: vector<u8>
+          tx.pure.vector('u8', encryptedTicketData.metadataHash), // encrypted_meta_hash: vector<u8>
           tx.pure.u8(0), // ticket_type: u8 (0 = 普通票)
           tx.pure.vector('u8', Array.from(new TextEncoder().encode(ticketName))), // name: vector<u8>
           tx.pure.vector('u8', Array.from(new TextEncoder().encode(ticketDescription))), // description: vector<u8>
@@ -106,6 +180,8 @@ export default function EventDetail() {
           tx.object('0x6'), // clock: &Clock
         ],
       });
+      
+      console.log('✅ Transaction built, executing...');
 
       signAndExecuteTransaction(
         {
@@ -113,19 +189,19 @@ export default function EventDetail() {
         },
         {
           onSuccess: (result) => {
-            console.log('Ticket purchased successfully:', result);
-            alert('🎫 Ticket purchased successfully!');
+            console.log('✅ Ticket minted successfully:', result);
+            alert('🎫 Ticket purchased successfully! Your encrypted ticket metadata is stored on Walrus.');
             loadEvent(); // 重新加载活动数据
           },
           onError: (error) => {
-            console.error('Error purchasing ticket:', error);
+            console.error('❌ Error purchasing ticket:', error);
             setError(error.message || 'Failed to purchase ticket');
             setPurchasing(false);
           },
         }
       );
     } catch (err) {
-      console.error('Error:', err);
+      console.error('❌ Error:', err);
       setError(err.message || 'An unexpected error occurred');
       setPurchasing(false);
     }

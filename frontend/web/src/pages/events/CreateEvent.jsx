@@ -129,7 +129,32 @@ export default function CreateEvent() {
         {
           onSuccess: (result) => {
             console.log('Event created successfully:', result);
-            alert('Event created successfully! 🎉');
+            
+            // 提取创建的对象信息
+            const objectChanges = result.objectChanges || [];
+            const eventInfo = objectChanges.find(obj => 
+              obj.objectType?.includes('EventInfo')
+            );
+            const ticketPolicy = objectChanges.find(obj => 
+              obj.objectType?.includes('TicketPolicy')
+            );
+            const policyCap = objectChanges.find(obj => 
+              obj.objectType?.includes('PolicyCap')
+            );
+            
+            console.log('📦 Created objects:', {
+              eventInfo: eventInfo?.objectId,
+              ticketPolicy: ticketPolicy?.objectId,
+              policyCap: policyCap?.objectId,
+            });
+            
+            // 提示用户保存 PolicyCap 信息
+            if (policyCap) {
+              alert(`✅ Event created successfully! 🎉\n\n⚠️ Important: Save your PolicyCap ID:\n${policyCap.objectId}\n\nYou will need this to mint tickets.`);
+            } else {
+              alert('Event created successfully! 🎉');
+            }
+            
             navigate('/events/my');
           },
           onError: (error) => {

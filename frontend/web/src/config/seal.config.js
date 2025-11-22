@@ -4,8 +4,11 @@
  * 参考: examples/frontend/src/constants.ts
  */
 
-// Seal 合约配置 (已部署在测试网)
-export const TESTNET_PACKAGE_ID = import.meta.env.VITE_PACKAGE_ID || '0x5a29cc03847b88c5225fb960e6a6ada5ef7ff9fa57494e69a8d831d82f7a5f21';
+// Attenda 合约包 ID (已部署在测试网)
+export const ATTENDA_PACKAGE_ID = import.meta.env.VITE_PACKAGE_ID || '0xd30215b9d1d46d32af4bc226d94611fb96b9fa67b75d14bdf7952f38907fcdfd';
+
+// Seal 合约包 ID (使用 Attenda 自带的 ticket_seal 模块)
+export const SEAL_PACKAGE_ID = ATTENDA_PACKAGE_ID;
 
 // Seal 密钥服务器配置
 export const SEAL_SERVER_CONFIGS = [
@@ -26,11 +29,11 @@ export const SEAL_CONFIG = {
   // 是否验证密钥服务器
   verifyKeyServers: false,
   // 合约包 ID
-  packageId: TESTNET_PACKAGE_ID,
+  packageId: SEAL_PACKAGE_ID,
 };
 
-// Allowlist 模块名称 (用于访问控制)
-export const ALLOWLIST_MODULE_NAME = 'allowlist';
+// Ticket Seal 模块名称 (用于访问控制)
+export const TICKET_SEAL_MODULE_NAME = 'ticket_seal';
 
 // Sui 网络配置
 export const SUI_NETWORK = import.meta.env.VITE_SUI_NETWORK || 'testnet';
@@ -44,5 +47,5 @@ export const SUI_EXPLORER_URL = 'https://suiscan.xyz/testnet';
  * @returns {string} 完整的合约调用目标
  */
 export function getSealTarget(functionName) {
-  return `${TESTNET_PACKAGE_ID}::${ALLOWLIST_MODULE_NAME}::${functionName}`;
+  return `${ATTENDA_PACKAGE_ID}::${TICKET_SEAL_MODULE_NAME}::${functionName}`;
 }

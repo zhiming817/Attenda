@@ -103,7 +103,7 @@ export async function uploadToWalrus(blob, metadata = {}, signer = null) {
         return {
           blobId,
           info: blobObject,
-          url: `${aggregatorUrl}/v1/${blobId}`,
+          url: `${aggregatorUrl}/v1/blobs/${blobId}`,
         };
       } catch (err) {
         console.warn('Walrus SDK writeBlob failed, falling back to publisher HTTP:', err);
