@@ -7,6 +7,7 @@ import Footer from '../../layout/Footer.jsx';
 import { uploadToWalrus } from '../../utils/walrus.js';
 
 const PACKAGE_ID = import.meta.env.VITE_PACKAGE_ID || '0x5a29cc03847b88c5225fb960e6a6ada5ef7ff9fa57494e69a8d831d82f7a5f21';
+const WALRUS_AGGREGATOR_URL = import.meta.env.VITE_WALRUS_AGGREGATOR;
 
 export default function CreateEvent() {
   const navigate = useNavigate();
@@ -21,12 +22,13 @@ export default function CreateEvent() {
     endTime: '',
     capacity: '',
     price: '',
-    imageUrl: '',
+    imageFile: null,
     ticketType: 'general',
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [imagePreview, setImagePreview] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -34,6 +36,20 @@ export default function CreateEvent() {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData(prev => ({ ...prev, imageFile: file }));
+      
+      // 创建预览
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -48,6 +64,22 @@ export default function CreateEvent() {
     setError('');
 
     try {
+      let imageUrl = '';
+      
+      // 如果用户上传了图片，先上传到 Walrus
+      if (formData.imageFile) {
+        console.log('Uploading image to Walrus...');
+        const imageUploadResult = await uploadToWalrus(formData.imageFile, {
+          type: 'event-image',
+          title: formData.title,
+        });
+        console.log('Image upload successful:', imageUploadResult);
+        
+        // 拼接完整的图片 URL
+        imageUrl = `${WALRUS_AGGREGATOR_URL}/v1/blobs/${imageUploadResult.blobId}`;
+        console.log('Image URL:', imageUrl);
+      }
+      
       // 构建活动元数据 JSON
       const eventMetadata = {
         title: formData.title,
@@ -56,7 +88,7 @@ export default function CreateEvent() {
         startTime: formData.startTime,
         endTime: formData.endTime,
         price: formData.price,
-        imageUrl: formData.imageUrl,
+        imageUrl: imageUrl,
         ticketType: formData.ticketType,
         createdAt: new Date().toISOString(),
       };
@@ -251,19 +283,26 @@ export default function CreateEvent() {
               </div>
             </div>
 
-            {/* Image URL */}
+            {/* Image Upload */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">
-                Event Image URL
+                Event Image
               </label>
               <input
-                type="url"
-                name="imageUrl"
-                value={formData.imageUrl}
-                onChange={handleChange}
-                placeholder="https://example.com/image.jpg"
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
               />
+              {imagePreview && (
+                <div className="mt-4">
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    className="max-w-xs rounded-lg shadow-md"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Ticket Type */}
