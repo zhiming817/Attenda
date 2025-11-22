@@ -6,6 +6,9 @@ import Navbar from '../../layout/Navbar.jsx';
 import Footer from '../../layout/Footer.jsx';
 
 const PACKAGE_ID = import.meta.env.VITE_PACKAGE_ID || '0x5a29cc03847b88c5225fb960e6a6ada5ef7ff9fa57494e69a8d831d82f7a5f21';
+const WALRUS_TICKET_IMG_URL = import.meta.env.VITE_WALRUS_TICKET_IMG_URL;
+const WALRUS_EVENT_IMG_URL = import.meta.env.VITE_WALRUS_EVENT_IMG_URL;
+
 
 export default function EventDetail() {
   const { eventId } = useParams();
@@ -84,7 +87,7 @@ export default function EventDetail() {
       
       const ticketName = `Attenda Ticket - General Admission`;
       const ticketDescription = `Event ticket NFT on Attenda platform. This NFT grants access to the event and serves as proof of attendance.`;
-      const ticketImageUrl = `https://aquamarine-peculiar-marsupial-246.mypinata.cloud/ipfs/bafkreia3bnaypv32gr2m45amqdnaeh57rpfnazljfug7jdiujnn6nxgxg4/`;
+      const ticketImageUrl = WALRUS_TICKET_IMG_URL;
       
       // 调用 mint_ticket 函数
       // mint_ticket(event: &mut EventInfo, to: address, walrus_blob_ref: vector<u8>, encrypted_meta_hash: vector<u8>, 
@@ -197,8 +200,16 @@ export default function EventDetail() {
             {/* Event Header */}
             <div className="bg-white rounded-2xl shadow-xl border-2 border-orange-200 overflow-hidden">
               {/* Event Image */}
-              <div className="h-64 bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
-                <span className="text-white text-8xl">🎭</span>
+              <div className="h-64 bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center overflow-hidden">
+                <img 
+                  src={WALRUS_EVENT_IMG_URL}
+                  alt="Event"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.parentElement.innerHTML = '<span class="text-white text-8xl">🎭</span>';
+                  }}
+                />
               </div>
 
               {/* Event Info */}
