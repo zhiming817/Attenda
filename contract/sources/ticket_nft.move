@@ -8,6 +8,7 @@ module attenda::ticket_nft {
     use sui::url::{Self, Url};
     use std::string::{Self, String};
     use attenda::event_registry::{Self, EventInfo};
+    use attenda::ticket_seal::{Self, TicketPolicy, PolicyCap};
 
     /// One-Time-Witness for Display
     public struct TICKET_NFT has drop {}
@@ -97,6 +98,8 @@ module attenda::ticket_nft {
     /// 铸造门票
     public entry fun mint_ticket(
         event: &mut EventInfo,
+        policy: &mut TicketPolicy,
+        cap: &PolicyCap,
         to: address,
         walrus_blob_ref: vector<u8>,
         encrypted_meta_hash: vector<u8>,
@@ -138,6 +141,9 @@ module attenda::ticket_nft {
 
         let ticket_id = sui::object::uid_to_address(&ticket.id);
         
+        // 添加持票人到 Seal 访问策略
+        ticket_seal::add_ticket_holder(policy, cap, ticket_id, to, ctx);
+        
         event::emit(TicketMinted {
             ticket_id,
             event_id: ticket.event_id,
@@ -152,6 +158,8 @@ module attenda::ticket_nft {
     #[allow(lint(custom_state_change))]
     public entry fun transfer_ticket(
         ticket: Ticket,
+        policy: &mut TicketPolicy,
+        cap: &PolicyCap,
         to: address,
         ctx: &mut TxContext
     ) {
@@ -161,6 +169,10 @@ module attenda::ticket_nft {
 
         let ticket_id = sui::object::uid_to_address(&ticket.id);
         let from = ticket.owner;
+        
+        // 更新 Seal 访问策略：移除旧持票人，添加新持票人
+        ticket_seal::remove_ticket_holder(policy, cap, ticket_id);
+        ticket_seal::add_ticket_holder(policy, cap, ticket_id, to, ctx);
 
         event::emit(TicketTransferred {
             ticket_id,
