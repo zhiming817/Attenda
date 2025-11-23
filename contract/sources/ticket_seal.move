@@ -112,6 +112,27 @@ module attenda::ticket_seal {
         });
     }
 
+    /// 添加持票人（无需 PolicyCap，铸造门票时内部调用）
+    public(package) fun add_ticket_holder_internal(
+        policy: &mut TicketPolicy,
+        ticket_id: address,
+        holder: address,
+        ctx: &TxContext
+    ) {
+        assert!(!policy.tickets.contains(&ticket_id), EDuplicate);
+        
+        policy.tickets.push_back(ticket_id);
+        policy.holders.push_back(holder);
+        
+        // 发布事件
+        event::emit(TicketHolderAdded {
+            policy_id: object::id(policy),
+            ticket_id: ticket_id,
+            holder: holder,
+            operator: ctx.sender(),
+        });
+    }
+
     /// 移除持票人（门票转让时调用）
     public fun remove_ticket_holder(
         policy: &mut TicketPolicy,

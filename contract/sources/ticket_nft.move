@@ -99,7 +99,6 @@ module attenda::ticket_nft {
     public entry fun mint_ticket(
         event: &mut EventInfo,
         policy: &mut TicketPolicy,
-        cap: &PolicyCap,
         to: address,
         walrus_blob_ref: vector<u8>,
         encrypted_meta_hash: vector<u8>,
@@ -141,8 +140,8 @@ module attenda::ticket_nft {
 
         let ticket_id = sui::object::uid_to_address(&ticket.id);
         
-        // 添加持票人到 Seal 访问策略
-        ticket_seal::add_ticket_holder(policy, cap, ticket_id, to, ctx);
+        // 添加持票人到 Seal 访问策略（无需 PolicyCap）
+        ticket_seal::add_ticket_holder_internal(policy, ticket_id, to, ctx);
         
         event::emit(TicketMinted {
             ticket_id,
