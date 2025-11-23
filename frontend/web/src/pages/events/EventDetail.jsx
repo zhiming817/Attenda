@@ -5,10 +5,18 @@ import { Transaction } from '@mysten/sui/transactions';
 import Navbar from '../../layout/Navbar.jsx';
 import Footer from '../../layout/Footer.jsx';
 import { createEncryptedTicketMetadata } from '../../utils/ticketEncryption.js';
+import { 
+  loadEventMetadata, 
+  formatEventTime,
+  getEventImageUrl,
+  getEventTitle,
+  getEventLocation 
+} from '../../utils/eventMetadata.js';
 
-const PACKAGE_ID = import.meta.env.VITE_PACKAGE_ID || '0x5a29cc03847b88c5225fb960e6a6ada5ef7ff9fa57494e69a8d831d82f7a5f21';
+const PACKAGE_ID = import.meta.env.VITE_PACKAGE_ID;
 const WALRUS_TICKET_IMG_URL = import.meta.env.VITE_WALRUS_TICKET_IMG_URL;
 const WALRUS_EVENT_IMG_URL = import.meta.env.VITE_WALRUS_EVENT_IMG_URL;
+const WALRUS_AGGREGATOR_URL = import.meta.env.VITE_WALRUS_AGGREGATOR;
 
 
 export default function EventDetail() {
@@ -19,6 +27,7 @@ export default function EventDetail() {
   const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
 
   const [event, setEvent] = useState(null);
+  const [eventMetadata, setEventMetadata] = useState(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
   const [error, setError] = useState('');
@@ -66,6 +75,13 @@ export default function EventDetail() {
       console.log('📋 Event fields:', fields);
       console.log('🔑 Policy ID:', policyId);
       console.log('🔑 PolicyCap ID:', policyCapId);
+      
+      // 从 Walrus 加载活动元数据
+      const walrusBlobId = fields.walrus_blob_id;
+      if (walrusBlobId) {
+        const metadata = await loadEventMetadata(walrusBlobId);
+        setEventMetadata(metadata);
+      }
       
       setEvent({
         id: eventId,
@@ -133,7 +149,7 @@ export default function EventDetail() {
         eventTitle: `Event ${eventId.slice(0, 8)}`,
         location: 'Decentralized Event Space',
         startTime: new Date(event.createdAt).toISOString(),
-        accessLink: `https://attenda.app/events/${eventId}/access`,
+        accessLink: `https://attenda.wal.app/#/events/${eventId}`,
         holderAddress: currentAccount.address,
         policyId: policyId, // 传递 policy ID 用于加密
       });
@@ -278,8 +294,8 @@ export default function EventDetail() {
               {/* Event Image */}
               <div className="h-64 bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center overflow-hidden">
                 <img 
-                  src={WALRUS_EVENT_IMG_URL}
-                  alt="Event"
+                  src={getEventImageUrl(eventMetadata, WALRUS_EVENT_IMG_URL)}
+                  alt={getEventTitle(eventMetadata, eventId)}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     e.target.style.display = 'none';
@@ -300,12 +316,40 @@ export default function EventDetail() {
                 </div>
 
                 <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-                  Event #{eventId.slice(0, 16)}...
+                  {getEventTitle(eventMetadata, eventId)}
                 </h1>
 
                 <div className="space-y-4 text-gray-700">
                   <div className="flex items-start gap-3">
                     <span className="text-2xl">📍</span>
+                    <div>
+                      <div className="font-bold text-gray-900">Location</div>
+                      <div className="text-sm">{getEventLocation(eventMetadata)}</div>
+                    </div>
+                  </div>
+
+                  {eventMetadata?.startTime && (
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">📅</span>
+                      <div>
+                        <div className="font-bold text-gray-900">Start Time</div>
+                        <div className="text-sm">{formatEventTime(eventMetadata.startTime)}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {eventMetadata?.endTime && (
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">⏰</span>
+                      <div>
+                        <div className="font-bold text-gray-900">End Time</div>
+                        <div className="text-sm">{formatEventTime(eventMetadata.endTime)}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">📦</span>
                     <div>
                       <div className="font-bold text-gray-900">Walrus Blob ID</div>
                       <div className="text-sm break-all">{event.walrusBlobId}</div>
@@ -347,12 +391,21 @@ export default function EventDetail() {
             {/* About */}
             <div className="bg-white rounded-2xl shadow-xl border-2 border-orange-200 p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">About This Event</h2>
-              <p className="text-gray-700 leading-relaxed">
-                This is a blockchain-based event with NFT tickets stored on the Sui network. 
-                Event metadata is stored on Walrus for decentralized, permanent access. 
-                Each ticket is a unique NFT that grants you access to the event and serves 
-                as proof of attendance.
+              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                {eventMetadata?.description || 
+                  'This is a blockchain-based event with NFT tickets stored on the Sui network. Event metadata is stored on Walrus for decentralized, permanent access. Each ticket is a unique NFT that grants you access to the event and serves as proof of attendance.'}
               </p>
+              
+              {eventMetadata?.price && parseFloat(eventMetadata.price) > 0 && (
+                <div className="mt-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-gray-900">Price:</span>
+                    <span className="text-2xl font-black text-orange-600">
+                      {eventMetadata.price} SUI
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

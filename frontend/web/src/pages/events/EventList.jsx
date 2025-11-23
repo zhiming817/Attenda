@@ -3,6 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useSuiClient } from '@mysten/dapp-kit';
 import Navbar from '../../layout/Navbar.jsx';
 import Footer from '../../layout/Footer.jsx';
+import { 
+  loadEventMetadataBatch, 
+  formatEventTime, 
+  getEventImageUrl, 
+  getEventTitle, 
+  getEventLocation 
+} from '../../utils/eventMetadata.js';
 
 const PACKAGE_ID = import.meta.env.VITE_PACKAGE_ID || '0x5a29cc03847b88c5225fb960e6a6ada5ef7ff9fa57494e69a8d831d82f7a5f21';
 
@@ -10,6 +17,7 @@ export default function EventList() {
   const navigate = useNavigate();
   const suiClient = useSuiClient();
   const [events, setEvents] = useState([]);
+  const [metadataMap, setMetadataMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, upcoming, past
 
@@ -67,7 +75,13 @@ export default function EventList() {
       );
 
       // 过滤掉 null 值
-      setEvents(eventList.filter(e => e !== null));
+      const validEvents = eventList.filter(e => e !== null);
+      setEvents(validEvents);
+      
+      // 批量加载元数据
+      const metadata = await loadEventMetadataBatch(validEvents);
+      console.log('Metadata loaded:', metadata);
+      setMetadataMap(metadata);
     } catch (error) {
       console.error('Error loading events:', error);
     } finally {
@@ -171,57 +185,78 @@ export default function EventList() {
 
         {!loading && filteredEvents.length > 0 && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEvents.map((event) => (
-              <div
-                key={event.id}
-                className="bg-white rounded-2xl shadow-lg border-2 border-orange-200 overflow-hidden transform hover:scale-105 transition-all cursor-pointer"
-                onClick={() => navigate(`/events/${event.id}`)}
-              >
-                {/* Event Image */}
-                <div className="h-48 bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
-                  <span className="text-white text-6xl">🎭</span>
-                </div>
-
-                {/* Event Info */}
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    {getStatusBadge(event.status)}
-                    <span className="text-sm text-gray-500">
-                      {event.ticketsSold}/{event.capacity} tickets
-                    </span>
+            {filteredEvents.map((event) => {
+              const metadata = metadataMap.get?.(event.walrusBlobId) || metadataMap[event.walrusBlobId];
+              console.log('Rendering event:', event.id, 'walrusBlobId:', event.walrusBlobId, 'metadata:', metadata);
+              
+              return (
+                <div
+                  key={event.id}
+                  className="bg-white rounded-2xl shadow-lg border-2 border-orange-200 overflow-hidden transform hover:scale-105 transition-all cursor-pointer"
+                  onClick={() => navigate(`/events/${event.id}`)}
+                >
+                  {/* Event Image */}
+                  <div className="h-48 bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center overflow-hidden">
+                    {metadata?.imageUrl ? (
+                      <img
+                        src={getEventImageUrl(metadata)}
+                        alt={getEventTitle(metadata, event.id)}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-white text-6xl">🎭</span>
+                    )}
                   </div>
 
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    Event #{event.id.slice(0, 8)}...
-                  </h3>
-
-                  <div className="space-y-2 text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <span>📍</span>
-                      <span className="truncate">{event.walrusBlobId}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span>👤</span>
-                      <span className="truncate">
-                        Organizer: {event.organizer.slice(0, 6)}...{event.organizer.slice(-4)}
+                  {/* Event Info */}
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-3">
+                      {getStatusBadge(event.status)}
+                      <span className="text-sm text-gray-500">
+                        {event.ticketsSold}/{event.capacity} tickets
                       </span>
                     </div>
-                  </div>
 
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <button
-                      className="w-full px-4 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-bold hover:from-orange-600 hover:to-red-700 transition-all"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/events/${event.id}`);
-                      }}
-                    >
-                      View Details →
-                    </button>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">
+                      {getEventTitle(metadata, event.id)}
+                    </h3>
+
+                    <div className="space-y-2 text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <span>📍</span>
+                        <span className="truncate">{getEventLocation(metadata)}</span>
+                      </div>
+                      
+                      {metadata?.startTime && (
+                        <div className="flex items-center gap-2">
+                          <span>📅</span>
+                          <span className="truncate">{formatEventTime(metadata.startTime)}</span>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center gap-2">
+                        <span>👤</span>
+                        <span className="truncate">
+                          Organizer: {event.organizer.slice(0, 6)}...{event.organizer.slice(-4)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <button
+                        className="w-full px-4 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-bold hover:from-orange-600 hover:to-red-700 transition-all"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/events/${event.id}`);
+                        }}
+                      >
+                        View Details →
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

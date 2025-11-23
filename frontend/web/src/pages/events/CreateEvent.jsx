@@ -6,7 +6,7 @@ import Navbar from '../../layout/Navbar.jsx';
 import Footer from '../../layout/Footer.jsx';
 import { uploadToWalrus } from '../../utils/walrus.js';
 
-const PACKAGE_ID = import.meta.env.VITE_PACKAGE_ID || '0x5a29cc03847b88c5225fb960e6a6ada5ef7ff9fa57494e69a8d831d82f7a5f21';
+const PACKAGE_ID = import.meta.env.VITE_PACKAGE_ID ;
 const WALRUS_AGGREGATOR_URL = import.meta.env.VITE_WALRUS_AGGREGATOR;
 
 export default function CreateEvent() {
@@ -208,7 +208,7 @@ export default function CreateEvent() {
                 value={formData.title}
                 onChange={handleChange}
                 placeholder="e.g., Web3 Developer Meetup"
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-gray-900"
               />
             </div>
 
@@ -224,7 +224,7 @@ export default function CreateEvent() {
                 onChange={handleChange}
                 rows="4"
                 placeholder="Describe your event..."
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-gray-900"
               />
             </div>
 
@@ -240,7 +240,7 @@ export default function CreateEvent() {
                 value={formData.location}
                 onChange={handleChange}
                 placeholder="e.g., San Francisco, CA or Online"
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-gray-900"
               />
             </div>
 
@@ -256,7 +256,7 @@ export default function CreateEvent() {
                   required
                   value={formData.startTime}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-gray-900"
                 />
               </div>
               <div>
@@ -269,7 +269,7 @@ export default function CreateEvent() {
                   required
                   value={formData.endTime}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-gray-900"
                 />
               </div>
             </div>
@@ -288,7 +288,7 @@ export default function CreateEvent() {
                   value={formData.capacity}
                   onChange={handleChange}
                   placeholder="e.g., 100"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-gray-900"
                 />
               </div>
               <div>
@@ -303,7 +303,7 @@ export default function CreateEvent() {
                   value={formData.price}
                   onChange={handleChange}
                   placeholder="0 for free event"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-gray-900"
                 />
               </div>
             </div>
@@ -317,7 +317,7 @@ export default function CreateEvent() {
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-gray-900"
               />
               {imagePreview && (
                 <div className="mt-4">
@@ -339,7 +339,7 @@ export default function CreateEvent() {
                 name="ticketType"
                 value={formData.ticketType}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-gray-900"
               >
                 <option value="general">General Admission</option>
                 <option value="vip">VIP</option>
