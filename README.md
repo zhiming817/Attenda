@@ -46,7 +46,7 @@ Located in `/frontend/mobile_flutter/`:
 - Native camera support for QR code scanning
 - Sui wallet integration and transaction signing
 - Optimized for mobile user experience
-- **Test APK available at**: `docs/app/app-debug.apk`
+- **Download APK**: [Google Drive](https://drive.google.com/file/d/1Q3kOnNSMKxEgzcyFzf-jo6U8l1r_Loeg/view)
 
 ### Backend (Rust)
 
