@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../models/event_model.dart';
 import '../views/check_in_screen.dart';
 
@@ -102,40 +103,44 @@ class EventCard extends StatelessWidget {
   }
 
   Widget _buildImage() {
+    final controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Colors.transparent)
+      ..loadHtmlString('''
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body { 
+              margin: 0; 
+              padding: 0; 
+              display: flex; 
+              justify-content: center; 
+              align-items: center; 
+              height: 200px;
+              background: #f5f5f5;
+            }
+            img { 
+              width: 100%; 
+              height: 200px; 
+              object-fit: cover;
+              display: block;
+            }
+          </style>
+        </head>
+        <body>
+          <img src="${event.metadata!.imageUrl!}" alt="Event Image">
+        </body>
+        </html>
+      ''');
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
-      child: Image.network(
-        event.metadata!.imageUrl!,
+      child: SizedBox(
         width: double.infinity,
         height: 200,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            width: double.infinity,
-            height: 200,
-            color: Colors.grey.shade200,
-            child: const Center(
-              child: Icon(Icons.broken_image, size: 64, color: Colors.grey),
-            ),
-          );
-        },
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            width: double.infinity,
-            height: 200,
-            color: Colors.grey.shade200,
-            child: Center(
-              child: CircularProgressIndicator(
-                value:
-                    loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                        : null,
-              ),
-            ),
-          );
-        },
+        child: WebViewWidget(controller: controller),
       ),
     );
   }
