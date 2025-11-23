@@ -38,6 +38,16 @@ Located in `/frontend/web/`:
 - Seal SDK for client-side encryption/decryption
 - Walrus client for decentralized storage access
 
+### Mobile App (Flutter)
+
+Located in `/frontend/mobile_flutter/`:
+
+- Cross-platform mobile app built with Flutter for iOS and Android
+- Native camera support for QR code scanning
+- Sui wallet integration and transaction signing
+- Optimized for mobile user experience
+- **Test APK available at**: `docs/app/app-debug.apk`
+
 ### Backend (Rust)
 
 Located in `/backend/rust-backend/`:
@@ -129,6 +139,7 @@ Located in `/backend/rust-backend/`:
 - **Storage**: Walrus decentralized storage network
 - **Encryption**: Seal protocol for client-side encryption
 - **Frontend**: React, Vite, TailwindCSS, @mysten/dapp-kit
+- **Mobile**: Flutter, Dart, mobile_scanner
 - **Backend**: Rust, Tokio, SQLx
 - **Database**: PostgreSQL
 

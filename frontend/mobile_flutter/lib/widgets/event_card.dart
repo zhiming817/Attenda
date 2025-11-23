@@ -7,11 +7,7 @@ class EventCard extends StatelessWidget {
   final EventModel event;
   final String? currentUserAddress;
 
-  const EventCard({
-    super.key,
-    required this.event,
-    this.currentUserAddress,
-  });
+  const EventCard({super.key, required this.event, this.currentUserAddress});
 
   @override
   Widget build(BuildContext context) {
@@ -103,10 +99,11 @@ class EventCard extends StatelessWidget {
   }
 
   Widget _buildImage() {
-    final controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(Colors.transparent)
-      ..loadHtmlString('''
+    final controller =
+        WebViewController()
+          ..setJavaScriptMode(JavaScriptMode.unrestricted)
+          ..setBackgroundColor(Colors.transparent)
+          ..loadHtmlString('''
         <!DOCTYPE html>
         <html>
         <head>

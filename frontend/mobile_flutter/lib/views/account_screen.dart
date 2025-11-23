@@ -39,11 +39,12 @@ class _AccountScreenState extends State<AccountScreen> {
         backgroundColor: Colors.orange,
         leading: IconButton(
           icon: const Icon(Icons.home, color: Colors.white),
-          onPressed: () => Navigator.pushNamedAndRemoveUntil(
-            context,
-            '/',
-            (route) => false,
-          ),
+          onPressed:
+              () => Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/',
+                (route) => false,
+              ),
           tooltip: 'Back to Home',
         ),
         title: const Text(

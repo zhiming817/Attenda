@@ -7,6 +7,7 @@ import Navbar from '../../layout/Navbar.jsx';
 import Footer from '../../layout/Footer.jsx';
 
 const PACKAGE_ID = import.meta.env.VITE_PACKAGE_ID;
+const REGISTRY_ID = import.meta.env.VITE_REGISTRY_ID;
 
 export default function CheckInScanner() {
   const { eventId } = useParams();
@@ -179,6 +180,8 @@ export default function CheckInScanner() {
         id: qrData.ticketId,
         options: {
           showContent: true,
+          showOwner: true,
+          showPreviousTransaction: true,
         },
       });
 
@@ -188,8 +191,25 @@ export default function CheckInScanner() {
 
       const ticketFields = ticketObj.data.content?.fields || {};
       
-      // 验证票据状态
-      if (ticketFields.status !== 0) {
+      // 从 owner 字段获取票据持有者地址
+      let ticketOwner;
+      if (ticketObj.data.owner && typeof ticketObj.data.owner === 'object') {
+        if (ticketObj.data.owner.AddressOwner) {
+          ticketOwner = ticketObj.data.owner.AddressOwner;
+        } else if (ticketObj.data.owner.ObjectOwner) {
+          ticketOwner = ticketObj.data.owner.ObjectOwner;
+        }
+      }
+      
+      if (!ticketOwner) {
+        throw new Error('Cannot determine ticket owner');
+      }
+      
+      console.log('✅ Ticket validation passed');
+      console.log('Ticket owner:', ticketOwner);
+      
+      // 验证票据状态（在内容字段中）
+      if (ticketFields.status !== undefined && ticketFields.status !== 0) {
         const statusText = ticketFields.status === 1 ? 'already used' : 'revoked';
         throw new Error(`This ticket has been ${statusText}`);
       }
@@ -199,21 +219,23 @@ export default function CheckInScanner() {
         throw new Error('This ticket is for a different event');
       }
 
-      console.log('✅ Ticket validation passed');
-      console.log('Ticket owner:', ticketFields.owner);
-
       // 2. 构建签到交易
       const tx = new Transaction();
 
       // 调用 attendance::record_attendance_with_verification
-      // 参数: event: &EventInfo, user: address, ticket: &mut Ticket, 
-      //       verification_code: vector<u8>, verification_method: u8, clock: &Clock
+      // 新参数: registry: &mut UsedTicketsRegistry, event: &EventInfo, user: address, 
+      //        ticket_id: address (票据对象 ID), verification_code: vector<u8>, 
+      //        verification_method: u8, clock: &Clock
+      
+      // 注意：合约已修改为接收 ticket_id (address) 而不是 ticket 对象引用
+      // 这样组织者可以在不拥有票据的情况下完成签到
       tx.moveCall({
         target: `${PACKAGE_ID}::attendance::record_attendance_with_verification`,
         arguments: [
-          tx.object(eventId), // EventInfo 对象（shared object）
-          tx.pure.address(ticketFields.owner), // 票据持有者地址
-          tx.object(qrData.ticketId), // Ticket 对象（mutable）
+          tx.object(REGISTRY_ID), // UsedTicketsRegistry（shared object，可变引用）
+          tx.object(eventId), // EventInfo 对象（shared object，不可变引用）
+          tx.pure.address(ticketOwner), // 票据持有者地址
+          tx.pure.address(qrData.ticketId), // 票据对象 ID（作为地址传递）
           tx.pure.vector('u8', Array.from(new TextEncoder().encode(qrData.verificationCode))), // 验证码（vector<u8>）
           tx.pure.u8(1), // verification_method: 1 = QR Code Scan
           tx.object('0x6'), // Clock 对象
@@ -229,7 +251,7 @@ export default function CheckInScanner() {
         {
           onSuccess: (result) => {
             console.log('✅ Check-in successful:', result);
-            setSuccess(`Check-in successful! Ticket holder: ${ticketFields.owner.slice(0, 6)}...${ticketFields.owner.slice(-4)}`);
+            setSuccess(`Check-in successful! Ticket holder: ${ticketOwner.slice(0, 6)}...${ticketOwner.slice(-4)}`);
             setScannedData(null);
             
             // 3秒后清除成功消息，可以继续扫描
