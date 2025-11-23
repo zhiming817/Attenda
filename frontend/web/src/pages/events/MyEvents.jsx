@@ -5,7 +5,7 @@ import { Transaction } from '@mysten/sui/transactions';
 import Navbar from '../../layout/Navbar.jsx';
 import Footer from '../../layout/Footer.jsx';
 
-const PACKAGE_ID = import.meta.env.VITE_PACKAGE_ID || '0x5a29cc03847b88c5225fb960e6a6ada5ef7ff9fa57494e69a8d831d82f7a5f21';
+const PACKAGE_ID = import.meta.env.VITE_PACKAGE_ID ;
 
 export default function MyEvents() {
   const navigate = useNavigate();
