@@ -475,6 +475,21 @@ export default function EventDetail() {
                   <li>• Lifetime ownership</li>
                 </ul>
               </div>
+
+              {/* Organizer Actions */}
+              {currentAccount && event.organizer === currentAccount.address && (
+                <div className="mt-6">
+                  <div className="border-t-2 border-gray-200 pt-6">
+                    <h4 className="text-sm font-bold text-gray-900 mb-3">👑 Organizer Actions</h4>
+                    <button
+                      onClick={() => navigate(`/events/${eventId}/checkin`)}
+                      className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+                    >
+                      🎫 Check-In Attendees
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

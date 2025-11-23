@@ -2,11 +2,15 @@
 /// 出席记录与 Attendance NFT 铸造
 module attenda::attendance {
     use sui::event;
+    use sui::clock::{Self, Clock};
+    use std::string::{Self, String};
     use attenda::ticket_nft::{Self, Ticket};
+    use attenda::event_registry::{Self, EventInfo};
 
     /// 错误码
     const ERR_NOT_AUTHORIZED: u64 = 3000;
     const ERR_TICKET_INVALID: u64 = 3002;
+    const ERR_NOT_EVENT_ORGANIZER: u64 = 3004;
 
     /// 出席记录结构体
     public struct Attendance has key, store {
@@ -16,6 +20,8 @@ module attenda::attendance {
         ticket_id: std::option::Option<address>,
         check_in_time: u64,
         verification_method: u8,
+        verification_code: String,
+        checked_in_by: address,
         is_soulbound: bool,
     }
 
@@ -26,6 +32,8 @@ module attenda::attendance {
         user: address,
         ticket_id: std::option::Option<address>,
         verification_method: u8,
+        verification_code: String,
+        checked_in_by: address,
     }
 
     /// Attendance NFT 铸造事件
@@ -37,29 +45,40 @@ module attenda::attendance {
 
     /// 记录出席（由门禁系统/验证者调用）
     public entry fun record_attendance(
-        event_id: address,
+        event: &EventInfo,
         user: address,
         ticket: &mut Ticket,
         verification_method: u8,
+        clock: &Clock,
         ctx: &mut TxContext
     ) {
+        let sender = sui::tx_context::sender(ctx);
+        
+        // 验证调用者是活动组织者
+        assert!(event_registry::is_organizer(event, sender), ERR_NOT_EVENT_ORGANIZER);
+        
         // 验证门票有效性
         assert!(ticket_nft::is_valid(ticket), ERR_TICKET_INVALID);
         assert!(ticket_nft::get_owner(ticket) == user, ERR_TICKET_INVALID);
+        
+        let event_id = sui::object::id_to_address(&sui::object::id(event));
         assert!(ticket_nft::get_event_id(ticket) == event_id, ERR_TICKET_INVALID);
 
         // 标记门票已用
         ticket_nft::mark_used(ticket, ctx);
 
         let ticket_addr = sui::object::id_to_address(&sui::object::id(ticket));
+        let now_ms = clock::timestamp_ms(clock);
         
         let attendance = Attendance {
             id: sui::object::new(ctx),
             event_id,
             user,
             ticket_id: std::option::some(ticket_addr),
-            check_in_time: sui::tx_context::epoch(ctx),
+            check_in_time: now_ms,
             verification_method,
+            verification_code: string::utf8(b""),
+            checked_in_by: sender,
             is_soulbound: false,
         };
 
@@ -71,28 +90,55 @@ module attenda::attendance {
             user,
             ticket_id: attendance.ticket_id,
             verification_method,
+            verification_code: attendance.verification_code,
+            checked_in_by: sender,
         });
 
         sui::transfer::public_transfer(attendance, user);
     }
 
-    /// 无门票出席记录（特殊情况）
-    public entry fun record_attendance_without_ticket(
-        event_id: address,
+    /// 记录出席（带验证码验证）- 用于二维码扫描签到
+    public entry fun record_attendance_with_verification(
+        event: &EventInfo,
         user: address,
+        ticket: &mut Ticket,
+        verification_code: vector<u8>,
         verification_method: u8,
+        clock: &Clock,
         ctx: &mut TxContext
     ) {
-        let _sender = sui::tx_context::sender(ctx);
-        // 在实际实现中，这里应检查 _sender 是否有权限（如组织者或验证者）
+        let sender = sui::tx_context::sender(ctx);
+        
+        // 验证调用者是活动组织者
+        assert!(event_registry::is_organizer(event, sender), ERR_NOT_EVENT_ORGANIZER);
+        
+        // 验证门票有效性
+        assert!(ticket_nft::is_valid(ticket), ERR_TICKET_INVALID);
+        assert!(ticket_nft::get_owner(ticket) == user, ERR_TICKET_INVALID);
+        
+        let event_id = sui::object::id_to_address(&sui::object::id(event));
+        assert!(ticket_nft::get_event_id(ticket) == event_id, ERR_TICKET_INVALID);
+
+        // 这里可以添加验证码验证逻辑（与链下加密数据中的验证码对比）
+        // 由于验证码存储在加密的 Walrus blob 中，实际验证在前端完成
+        // 这里主要记录验证码用于审计
+
+        // 标记门票已用
+        ticket_nft::mark_used(ticket, ctx);
+
+        let ticket_addr = sui::object::id_to_address(&sui::object::id(ticket));
+        let now_ms = clock::timestamp_ms(clock);
+        let verification_code_str = string::utf8(verification_code);
         
         let attendance = Attendance {
             id: sui::object::new(ctx),
             event_id,
             user,
-            ticket_id: std::option::none(),
-            check_in_time: sui::tx_context::epoch(ctx),
+            ticket_id: std::option::some(ticket_addr),
+            check_in_time: now_ms,
             verification_method,
+            verification_code: verification_code_str,
+            checked_in_by: sender,
             is_soulbound: false,
         };
 
@@ -102,8 +148,53 @@ module attenda::attendance {
             attendance_id,
             event_id,
             user,
-            ticket_id: option::none(),
+            ticket_id: attendance.ticket_id,
             verification_method,
+            verification_code: verification_code_str,
+            checked_in_by: sender,
+        });
+
+        sui::transfer::public_transfer(attendance, user);
+    }
+
+    /// 无门票出席记录（特殊情况）
+    public entry fun record_attendance_without_ticket(
+        event: &EventInfo,
+        user: address,
+        verification_method: u8,
+        clock: &Clock,
+        ctx: &mut TxContext
+    ) {
+        let sender = sui::tx_context::sender(ctx);
+        
+        // 验证调用者是活动组织者
+        assert!(event_registry::is_organizer(event, sender), ERR_NOT_EVENT_ORGANIZER);
+        
+        let event_id = sui::object::id_to_address(&sui::object::id(event));
+        let now_ms = clock::timestamp_ms(clock);
+        
+        let attendance = Attendance {
+            id: sui::object::new(ctx),
+            event_id,
+            user,
+            ticket_id: std::option::none(),
+            check_in_time: now_ms,
+            verification_method,
+            verification_code: string::utf8(b""),
+            checked_in_by: sender,
+            is_soulbound: false,
+        };
+
+        let attendance_id = sui::object::uid_to_address(&attendance.id);
+
+        event::emit(AttendanceRecorded {
+            attendance_id,
+            event_id,
+            user,
+            ticket_id: std::option::none(),
+            verification_method,
+            verification_code: string::utf8(b""),
+            checked_in_by: sender,
         });
 
         sui::transfer::public_transfer(attendance, user);
@@ -142,5 +233,13 @@ module attenda::attendance {
 
     public fun is_soulbound(attendance: &Attendance): bool {
         attendance.is_soulbound
+    }
+
+    public fun get_verification_code(attendance: &Attendance): String {
+        attendance.verification_code
+    }
+
+    public fun get_checked_in_by(attendance: &Attendance): address {
+        attendance.checked_in_by
     }
 }

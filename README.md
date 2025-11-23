@@ -73,7 +73,7 @@ Located in `/backend/rust-backend/`:
    
    Create `.env` file in `frontend/web/`:
    ```env
-   VITE_PACKAGE_ID=your_deployed_package_id
+   VITE_PACKAGE_ID=0x6c037d7d714610d03bf041d1a1012f50bf3b14141c8a6c2d0a48991eac17d7c4
    VITE_WALRUS_AGGREGATOR=https://aggregator.walrus-testnet.walrus.space
    VITE_WALRUS_PUBLISHER=https://publisher.walrus-testnet.walrus.space
    ```

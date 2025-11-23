@@ -194,4 +194,9 @@ module attenda::event_registry {
     public fun get_policy_cap_id(event: &EventInfo): ID {
         event.policy_cap_id
     }
+
+    /// 检查地址是否为活动组织者
+    public fun is_organizer(event: &EventInfo, addr: address): bool {
+        event.organizer == addr
+    }
 }

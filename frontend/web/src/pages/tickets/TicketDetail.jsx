@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useCurrentAccount, useSuiClient, useSignPersonalMessage } from '@mysten/dapp-kit';
 import { decryptTicketMetadata } from '../../utils/ticketEncryption';
+import QRCode from 'qrcode';
 import Navbar from '../../layout/Navbar.jsx';
 import Footer from '../../layout/Footer.jsx';
 
@@ -15,6 +16,7 @@ export default function TicketDetail() {
   const [ticket, setTicket] = useState(null);
   const [event, setEvent] = useState(null);
   const [decryptedData, setDecryptedData] = useState(null);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [decrypting, setDecrypting] = useState(false);
   const [error, setError] = useState('');
@@ -116,6 +118,28 @@ export default function TicketDetail() {
 
       setDecryptedData(decrypted);
       console.log('✅ Decryption successful');
+      
+      // 生成包含真实 ticket ID 的二维码
+      const qrData = {
+        ticketId: ticketId, // 使用真实的 ticket NFT ID
+        eventId: ticket.event_id,
+        holder: currentAccount.address,
+        timestamp: Date.now(),
+        verificationCode: decrypted.encryptedData.verificationCode,
+      };
+      
+      const qrCodeUrl = await QRCode.toDataURL(JSON.stringify(qrData), {
+        errorCorrectionLevel: 'H',
+        margin: 1,
+        width: 300,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF',
+        },
+      });
+      
+      setQrCodeDataUrl(qrCodeUrl);
+      console.log('✅ QR Code generated with real ticket ID');
     } catch (err) {
       console.error('❌ Decryption failed:', err);
       setError(err.message || 'Failed to decrypt ticket data');
@@ -282,11 +306,11 @@ export default function TicketDetail() {
                 <div className="space-y-4">
                   <div className="bg-white p-4 rounded-lg shadow">
                     <p className="text-sm text-gray-600 mb-1">📍 Event Location</p>
-                    <p className="font-bold text-lg">{decryptedData.encryptedData.location}</p>
+                    <p className="font-bold text-lg text-gray-900">{decryptedData.encryptedData.location}</p>
                   </div>
                   <div className="bg-white p-4 rounded-lg shadow">
                     <p className="text-sm text-gray-600 mb-1">🕐 Start Time</p>
-                    <p className="font-bold">
+                    <p className="font-bold text-gray-900">
                       {new Date(decryptedData.encryptedData.startTime).toLocaleString()}
                     </p>
                   </div>
@@ -315,7 +339,7 @@ export default function TicketDetail() {
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Entry QR Code</h2>
                 <div className="inline-block p-4 bg-white rounded-lg shadow-lg">
                   <img
-                    src={decryptedData.encryptedData.qrCode}
+                    src={qrCodeDataUrl || decryptedData.encryptedData.qrCode}
                     alt="Ticket QR Code"
                     className="max-w-xs mx-auto"
                   />
