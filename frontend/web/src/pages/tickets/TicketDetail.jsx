@@ -201,32 +201,32 @@ export default function TicketDetail() {
             <h2 className="text-xl font-bold text-gray-900 mb-4">Ticket Information</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-600">Ticket ID</p>
-                <p className="font-mono text-sm">{ticketId.slice(0, 20)}...</p>
+                <p className="text-sm text-gray-900">Ticket ID</p>
+                <p className="font-mono text-sm text-gray-900">{ticketId.slice(0, 20)}...</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Event ID</p>
-                <p className="font-mono text-sm">{ticket?.event_id.slice(0, 20)}...</p>
+                <p className="text-sm text-gray-900">Event ID</p>
+                <p className="font-mono text-sm text-gray-900">{ticket?.event_id.slice(0, 20)}...</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Name</p>
-                <p className="font-medium">{ticket?.name}</p>
+                <p className="text-sm text-gray-900">Name</p>
+                <p className="font-medium text-gray-900">{ticket?.name}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Type</p>
-                <p className="font-medium">
+                <p className="text-sm text-gray-900">Type</p>
+                <p className="font-medium text-gray-900">
                   {ticket?.ticket_type === 0 ? 'General Admission' : 'VIP'}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Created At</p>
-                <p className="font-medium">
+                <p className="text-sm text-gray-900">Created At</p>
+                <p className="font-medium text-gray-900">
                   {new Date(parseInt(ticket?.created_at)).toLocaleString()}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Walrus Blob ID</p>
-                <p className="font-mono text-xs break-all">{ticket?.walrus_blob_ref}</p>
+                <p className="text-sm text-gray-900">Walrus Blob ID</p>
+                <p className="font-mono text-xs break-all text-gray-900">{ticket?.walrus_blob_ref}</p>
               </div>
             </div>
           </div>

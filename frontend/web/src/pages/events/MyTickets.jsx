@@ -161,28 +161,28 @@ export default function MyTickets() {
                   {/* Ticket Body */}
                   <div className="p-6 space-y-4">
                     <div>
-                      <div className="text-xs text-gray-500 font-medium mb-1">Event ID</div>
+                      <div className="text-xs text-gray-900 font-medium mb-1">Event ID</div>
                       <div className="text-sm font-mono text-gray-900 truncate">
                         {ticket.eventId}
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-xs text-gray-500 font-medium mb-1">Ticket ID</div>
+                      <div className="text-xs text-gray-900 font-medium mb-1">Ticket ID</div>
                       <div className="text-sm font-mono text-gray-900 truncate">
                         {ticket.id}
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-xs text-gray-500 font-medium mb-1">Created At</div>
+                      <div className="text-xs text-gray-900 font-medium mb-1">Created At</div>
                       <div className="text-sm text-gray-900">
                         {ticket.createdAt > 0 ? new Date(ticket.createdAt).toLocaleString() : 'N/A'}
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-xs text-gray-500 font-medium mb-1">Status</div>
+                      <div className="text-xs text-gray-900 font-medium mb-1">Status</div>
                       <div className="text-sm text-gray-900">
                         {ticket.status === 0 ? '✅ Valid' : ticket.status === 1 ? '🎟️ Used' : '❌ Revoked'}
                       </div>
@@ -196,11 +196,17 @@ export default function MyTickets() {
                       >
                         View Event
                       </button>
-                      <button
+                      {/* <button
                         onClick={() => navigate(`/tickets/${ticket.id}/manage`)}
                         className="w-full px-4 py-3 border-2 border-orange-500 text-orange-600 rounded-lg font-bold hover:bg-orange-50 transition-all"
                       >
                         🔧 Manage Ticket
+                      </button> */}
+                      <button
+                        onClick={() => navigate(`/tickets/${ticket.id}`)}
+                        className="w-full px-4 py-3 border-2 border-orange-500 text-orange-600 rounded-lg font-bold hover:bg-orange-50 transition-all"
+                      >
+                        View Ticket
                       </button>
                     </div>
                   </div>
