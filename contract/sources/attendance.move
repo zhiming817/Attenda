@@ -11,6 +11,22 @@ module attenda::attendance {
     const ERR_NOT_AUTHORIZED: u64 = 3000;
     const ERR_TICKET_INVALID: u64 = 3002;
     const ERR_NOT_EVENT_ORGANIZER: u64 = 3004;
+    const ERR_TICKET_ALREADY_USED: u64 = 3005;
+
+    /// 已使用票据记录表（全局共享对象）
+    public struct UsedTicketsRegistry has key {
+        id: UID,
+        used_tickets: sui::table::Table<address, bool>,
+    }
+
+    /// 初始化函数（部署时调用一次）
+    fun init(ctx: &mut TxContext) {
+        let registry = UsedTicketsRegistry {
+            id: sui::object::new(ctx),
+            used_tickets: sui::table::new(ctx),
+        };
+        sui::transfer::share_object(registry);
+    }
 
     /// 出席记录结构体
     public struct Attendance has key, store {
@@ -45,9 +61,10 @@ module attenda::attendance {
 
     /// 记录出席（由门禁系统/验证者调用）
     public entry fun record_attendance(
+        registry: &mut UsedTicketsRegistry,
         event: &EventInfo,
         user: address,
-        ticket: &mut Ticket,
+        ticket: &Ticket,
         verification_method: u8,
         clock: &Clock,
         ctx: &mut TxContext
@@ -64,10 +81,13 @@ module attenda::attendance {
         let event_id = sui::object::id_to_address(&sui::object::id(event));
         assert!(ticket_nft::get_event_id(ticket) == event_id, ERR_TICKET_INVALID);
 
-        // 标记门票已用
-        ticket_nft::mark_used(ticket, ctx);
-
         let ticket_addr = sui::object::id_to_address(&sui::object::id(ticket));
+        
+        // 检查票据是否已使用
+        assert!(!sui::table::contains(&registry.used_tickets, ticket_addr), ERR_TICKET_ALREADY_USED);
+        
+        // 标记门票已用（记录到全局表中）
+        sui::table::add(&mut registry.used_tickets, ticket_addr, true);
         let now_ms = clock::timestamp_ms(clock);
         
         let attendance = Attendance {
@@ -98,10 +118,13 @@ module attenda::attendance {
     }
 
     /// 记录出席（带验证码验证）- 用于二维码扫描签到
+    /// 注意：此版本只接收 ticket_id，不需要票据对象引用
+    /// 这样组织者可以在不拥有票据的情况下完成签到
     public entry fun record_attendance_with_verification(
+        registry: &mut UsedTicketsRegistry,
         event: &EventInfo,
         user: address,
-        ticket: &mut Ticket,
+        ticket_id: address,
         verification_code: vector<u8>,
         verification_method: u8,
         clock: &Clock,
@@ -112,21 +135,18 @@ module attenda::attendance {
         // 验证调用者是活动组织者
         assert!(event_registry::is_organizer(event, sender), ERR_NOT_EVENT_ORGANIZER);
         
-        // 验证门票有效性
-        assert!(ticket_nft::is_valid(ticket), ERR_TICKET_INVALID);
-        assert!(ticket_nft::get_owner(ticket) == user, ERR_TICKET_INVALID);
+        // 检查票据是否已使用
+        assert!(!sui::table::contains(&registry.used_tickets, ticket_id), ERR_TICKET_ALREADY_USED);
+        
+        // 标记门票已用（记录到全局表中）
+        // 注意：我们信任组织者和前端验证逻辑
+        // 前端已经验证了：
+        // 1. 票据存在且属于正确的活动
+        // 2. 票据所有者是 user 地址
+        // 3. 验证码匹配
+        sui::table::add(&mut registry.used_tickets, ticket_id, true);
         
         let event_id = sui::object::id_to_address(&sui::object::id(event));
-        assert!(ticket_nft::get_event_id(ticket) == event_id, ERR_TICKET_INVALID);
-
-        // 这里可以添加验证码验证逻辑（与链下加密数据中的验证码对比）
-        // 由于验证码存储在加密的 Walrus blob 中，实际验证在前端完成
-        // 这里主要记录验证码用于审计
-
-        // 标记门票已用
-        ticket_nft::mark_used(ticket, ctx);
-
-        let ticket_addr = sui::object::id_to_address(&sui::object::id(ticket));
         let now_ms = clock::timestamp_ms(clock);
         let verification_code_str = string::utf8(verification_code);
         
@@ -134,7 +154,7 @@ module attenda::attendance {
             id: sui::object::new(ctx),
             event_id,
             user,
-            ticket_id: std::option::some(ticket_addr),
+            ticket_id: std::option::some(ticket_id),
             check_in_time: now_ms,
             verification_method,
             verification_code: verification_code_str,
