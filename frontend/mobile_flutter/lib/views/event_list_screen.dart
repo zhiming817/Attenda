@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../controllers/event_controller.dart';
 import '../widgets/event_card.dart';
+import '../services/account_service.dart';
 
 class EventListScreen extends StatefulWidget {
   const EventListScreen({super.key});
@@ -11,6 +12,8 @@ class EventListScreen extends StatefulWidget {
 
 class _EventListScreenState extends State<EventListScreen> {
   late final EventController _controller;
+  final AccountService _accountService = AccountService();
+  String? _currentUserAddress;
 
   @override
   void initState() {
@@ -18,6 +21,16 @@ class _EventListScreenState extends State<EventListScreen> {
     _controller = EventController();
     _controller.loadEvents();
     _controller.addListener(_onControllerUpdate);
+    _loadCurrentUser();
+  }
+
+  Future<void> _loadCurrentUser() async {
+    final account = await _accountService.getSavedAccount();
+    if (account != null && mounted) {
+      setState(() {
+        _currentUserAddress = account.getAddress();
+      });
+    }
   }
 
   @override
@@ -72,7 +85,10 @@ class _EventListScreenState extends State<EventListScreen> {
       padding: const EdgeInsets.all(16),
       itemCount: _controller.events.length,
       itemBuilder: (context, index) {
-        return EventCard(event: _controller.events[index]);
+        return EventCard(
+          event: _controller.events[index],
+          currentUserAddress: _currentUserAddress,
+        );
       },
     );
   }

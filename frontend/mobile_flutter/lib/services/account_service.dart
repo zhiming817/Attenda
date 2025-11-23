@@ -251,7 +251,7 @@ class AccountService {
       print('🚰 Requesting SUI from faucet for: $address');
 
       final faucet = FaucetClient(SuiUrls.faucetTest);
-      await faucet.requestSuiFromFaucetV0(address);
+      await faucet.requestSuiFromFaucetV1(address);
 
       print('✅ Faucet request successful');
       return true;

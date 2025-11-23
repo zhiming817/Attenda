@@ -4,8 +4,13 @@ import '../views/check_in_screen.dart';
 
 class EventCard extends StatelessWidget {
   final EventModel event;
+  final String? currentUserAddress;
 
-  const EventCard({super.key, required this.event});
+  const EventCard({
+    super.key,
+    required this.event,
+    this.currentUserAddress,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -56,35 +61,44 @@ class EventCard extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // 签到按钮
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => CheckInScreen(eventId: event.eventId),
+            // 签到按钮（仅活动组织者可见）
+            if (_isOrganizer())
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => CheckInScreen(eventId: event.eventId),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.qr_code_scanner),
+                  label: const Text('Check-In'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  );
-                },
-                icon: const Icon(Icons.qr_code_scanner),
-                label: const Text('Check-In'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
     );
+  }
+
+  /// 检查当前用户是否为活动组织者
+  bool _isOrganizer() {
+    if (currentUserAddress == null || currentUserAddress!.isEmpty) {
+      return false;
+    }
+    return event.organizer.toLowerCase() == currentUserAddress!.toLowerCase();
   }
 
   Widget _buildImage() {

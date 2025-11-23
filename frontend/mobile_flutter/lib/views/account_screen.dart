@@ -37,6 +37,15 @@ class _AccountScreenState extends State<AccountScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.orange,
+        leading: IconButton(
+          icon: const Icon(Icons.home, color: Colors.white),
+          onPressed: () => Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/',
+            (route) => false,
+          ),
+          tooltip: 'Back to Home',
+        ),
         title: const Text(
           '👛 Sui Account',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
