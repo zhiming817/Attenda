@@ -15,7 +15,11 @@ class EventModel {
     required this.timestamp,
   });
 
-  factory EventModel.fromJson(Map<String, dynamic> json, EventMetadata? metadata, String txDigest) {
+  factory EventModel.fromJson(
+    Map<String, dynamic> json,
+    EventMetadata? metadata,
+    String txDigest,
+  ) {
     // 安全地解析 capacity，支持 String 和 int 类型
     int capacity = 0;
     final capacityValue = json['capacity'];

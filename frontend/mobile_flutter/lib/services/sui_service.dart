@@ -4,7 +4,7 @@ import 'walrus_service.dart';
 
 class SuiService {
   static const String packageId =
-      '0x8b17b23f2ecc48dc78d453f437b98b241b4948ea0f32c3371ad9a9d7bc3cbec0';
+      '0x1f668fd670678b4849d269b2f60229d40aa998a6ff70ac984ea790bdba5c396e';
 
   final SuiClient _client;
   final WalrusService _walrusService;

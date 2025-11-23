@@ -5,11 +5,15 @@ import '../services/account_service.dart';
 class AccountController extends ChangeNotifier {
   final AccountService _accountService = AccountService();
 
+  List<AccountInfo> _accounts = [];
+  AccountInfo? _currentAccountInfo;
   SuiAccount? _account;
   bool _isLoading = false;
   String? _error;
   String _balance = '0';
 
+  List<AccountInfo> get accounts => _accounts;
+  AccountInfo? get currentAccountInfo => _currentAccountInfo;
   SuiAccount? get account => _account;
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -23,7 +27,10 @@ class AccountController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      _accounts = await _accountService.getAllAccounts();
+      _currentAccountInfo = await _accountService.getCurrentAccountInfo();
       _account = await _accountService.getSavedAccount();
+
       if (_account != null) {
         await _loadBalance();
       }
@@ -60,18 +67,25 @@ class AccountController extends ChangeNotifier {
   }
 
   /// 创建 Ed25519 账号
-  Future<void> createEd25519Account() async {
-    await _createAccount(() => _accountService.createEd25519Account());
+  Future<void> createEd25519Account(String name) async {
+    await _createAccount(() => _accountService.createEd25519Account(name));
   }
 
   /// 创建 Secp256k1 账号
-  Future<void> createSecp256k1Account() async {
-    await _createAccount(() => _accountService.createSecp256k1Account());
+  Future<void> createSecp256k1Account(String name) async {
+    await _createAccount(() => _accountService.createSecp256k1Account(name));
   }
 
   /// 创建 Secp256r1 账号
-  Future<void> createSecp256r1Account() async {
-    await _createAccount(() => _accountService.createSecp256r1Account());
+  Future<void> createSecp256r1Account(String name) async {
+    await _createAccount(() => _accountService.createSecp256r1Account(name));
+  }
+
+  /// 导入账号
+  Future<void> importAccount(String privateKey, String name) async {
+    await _createAccount(
+      () => _accountService.importAccountFromPrivateKey(privateKey, name),
+    );
   }
 
   Future<void> _createAccount(Future<SuiAccount> Function() createFn) async {
@@ -80,8 +94,42 @@ class AccountController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _account = await createFn();
-      await _loadBalance();
+      await createFn();
+      await initialize(); // 重新加载所有账号
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  /// 切换当前账号
+  Future<void> switchAccount(String address) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await _accountService.setCurrentAccount(address);
+      await initialize(); // 重新加载
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  /// 删除账号
+  Future<void> deleteAccount(String address) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await _accountService.deleteAccount(address);
+      await initialize(); // 重新加载
       _error = null;
     } catch (e) {
       _error = e.toString();
@@ -124,8 +172,10 @@ class AccountController extends ChangeNotifier {
   }
 
   /// 清除账号
-  Future<void> clearAccount() async {
-    await _accountService.clearAccount();
+  Future<void> clearAllAccounts() async {
+    await _accountService.clearAllAccounts();
+    _accounts = [];
+    _currentAccountInfo = null;
     _account = null;
     _balance = '0';
     _error = null;

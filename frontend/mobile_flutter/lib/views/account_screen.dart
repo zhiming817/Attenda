@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../controllers/account_controller.dart';
+import 'account_list_screen.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -46,6 +47,20 @@ class _AccountScreenState extends State<AccountScreen> {
               icon: const Icon(Icons.refresh, color: Colors.white),
               onPressed: _controller.refreshBalance,
             ),
+          IconButton(
+            icon: const Icon(Icons.account_balance_wallet, color: Colors.white),
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => AccountListScreen(controller: _controller),
+                ),
+              );
+              // Refresh UI after returning from account list
+              setState(() {});
+            },
+          ),
         ],
       ),
       body: _buildBody(),
@@ -106,10 +121,7 @@ class _AccountScreenState extends State<AccountScreen> {
               children: [
                 const Text(
                   'Your Account',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 if (_controller.isLoading)
                   const SizedBox(
@@ -120,7 +132,7 @@ class _AccountScreenState extends State<AccountScreen> {
               ],
             ),
             const SizedBox(height: 20),
-            
+
             // 余额显示
             Container(
               padding: const EdgeInsets.all(16),
@@ -130,7 +142,8 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.account_balance_wallet, 
+                  Icon(
+                    Icons.account_balance_wallet,
                     color: Colors.orange.shade700,
                     size: 32,
                   ),
@@ -140,10 +153,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     children: [
                       const Text(
                         'Balance',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -159,11 +169,11 @@ class _AccountScreenState extends State<AccountScreen> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 16),
-            
+
             Row(
               children: [
                 const Icon(Icons.account_circle, color: Colors.orange),
@@ -174,10 +184,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     children: [
                       const Text(
                         'Address',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -215,16 +222,17 @@ class _AccountScreenState extends State<AccountScreen> {
   Widget _buildFaucetButton() {
     return ElevatedButton.icon(
       onPressed: _controller.isLoading ? null : _requestFaucet,
-      icon: _controller.isLoading
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            )
-          : const Icon(Icons.water_drop),
+      icon:
+          _controller.isLoading
+              ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+              : const Icon(Icons.water_drop),
       label: const Text('Request Test SUI from Faucet'),
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.blue,
@@ -251,88 +259,38 @@ class _AccountScreenState extends State<AccountScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const Text(
-          'Create New Sui Account',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          'No Account',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 12),
         const Text(
-          'Choose a signature scheme to create your account',
+          'Create or import an account to get started',
           style: TextStyle(color: Colors.grey),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 32),
-        _buildCreateButton(
-          'Ed25519 (Recommended)',
-          'Most common signature scheme',
-          Icons.security,
-          _controller.createEd25519Account,
-        ),
-        const SizedBox(height: 12),
-        _buildCreateButton(
-          'Secp256k1',
-          'Used by Bitcoin and Ethereum',
-          Icons.currency_bitcoin,
-          _controller.createSecp256k1Account,
-        ),
-        const SizedBox(height: 12),
-        _buildCreateButton(
-          'Secp256r1',
-          'Used by modern secure systems',
-          Icons.shield,
-          _controller.createSecp256r1Account,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCreateButton(
-    String title,
-    String subtitle,
-    IconData icon,
-    VoidCallback onPressed,
-  ) {
-    return Card(
-      elevation: 1,
-      child: InkWell(
-        onTap: _controller.isLoading ? null : onPressed,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Icon(icon, color: Colors.orange, size: 32),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
+        ElevatedButton.icon(
+          onPressed: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) => AccountListScreen(controller: _controller),
               ),
-              const Icon(Icons.arrow_forward_ios, size: 16),
-            ],
+            );
+            // Refresh UI after returning from account list
+            setState(() {});
+          },
+          icon: const Icon(Icons.account_balance_wallet),
+          label: const Text('Manage Accounts'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.orange,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -350,7 +308,9 @@ class _AccountScreenState extends State<AccountScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('❌ ${_controller.error ?? "Failed to request from faucet"}'),
+          content: Text(
+            '❌ ${_controller.error ?? "Failed to request from faucet"}',
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -360,26 +320,27 @@ class _AccountScreenState extends State<AccountScreen> {
   void _showClearConfirmation() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear Account'),
-        content: const Text(
-          'Are you sure you want to clear your account? This will delete your private key from local storage.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Clear All Accounts'),
+            content: const Text(
+              'Are you sure you want to clear all accounts? This will delete all private keys from local storage.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _controller.clearAllAccounts();
+                },
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Clear All'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _controller.clearAccount();
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Clear'),
-          ),
-        ],
-      ),
     );
   }
 }

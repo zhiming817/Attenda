@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/event_model.dart';
+import '../views/check_in_screen.dart';
 
 class EventCard extends StatelessWidget {
   final EventModel event;
@@ -25,26 +26,17 @@ class EventCard extends StatelessWidget {
             // 标题
             Text(
               event.metadata?.title ?? 'Untitled Event',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
 
             // 位置
             if (event.metadata?.location != null)
-              _buildInfoRow(
-                Icons.location_on,
-                event.metadata!.location!,
-              ),
+              _buildInfoRow(Icons.location_on, event.metadata!.location!),
 
             // 时间
             if (event.metadata?.startTime != null)
-              _buildInfoRow(
-                Icons.access_time,
-                event.metadata!.startTime!,
-              ),
+              _buildInfoRow(Icons.access_time, event.metadata!.startTime!),
 
             const SizedBox(height: 8),
 
@@ -61,6 +53,34 @@ class EventCard extends StatelessWidget {
 
             // 门票信息
             _buildTags(),
+
+            const SizedBox(height: 12),
+
+            // 签到按钮
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => CheckInScreen(eventId: event.eventId),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.qr_code_scanner),
+                label: const Text('Check-In'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -81,11 +101,7 @@ class EventCard extends StatelessWidget {
             height: 200,
             color: Colors.grey.shade200,
             child: const Center(
-              child: Icon(
-                Icons.broken_image,
-                size: 64,
-                color: Colors.grey,
-              ),
+              child: Icon(Icons.broken_image, size: 64, color: Colors.grey),
             ),
           );
         },
@@ -97,10 +113,11 @@ class EventCard extends StatelessWidget {
             color: Colors.grey.shade200,
             child: Center(
               child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                        loadingProgress.expectedTotalBytes!
-                    : null,
+                value:
+                    loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                        : null,
               ),
             ),
           );
@@ -114,12 +131,7 @@ class EventCard extends StatelessWidget {
       children: [
         Icon(icon, size: 16, color: Colors.grey),
         const SizedBox(width: 4),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(color: Colors.grey),
-          ),
-        ),
+        Expanded(child: Text(text, style: const TextStyle(color: Colors.grey))),
       ],
     );
   }
@@ -144,21 +156,12 @@ class EventCard extends StatelessWidget {
 
   Widget _buildTag(String text, Color bgColor, Color textColor) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 4,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          color: textColor,
-        ),
-      ),
+      child: Text(text, style: TextStyle(fontSize: 12, color: textColor)),
     );
   }
 }

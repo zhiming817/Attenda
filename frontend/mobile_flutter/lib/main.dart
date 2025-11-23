@@ -46,9 +46,7 @@ class _MainScreenState extends State<MainScreen> {
           padding: EdgeInsets.zero,
           children: [
             const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.orange,
-              ),
+              decoration: BoxDecoration(color: Colors.orange),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -64,10 +62,7 @@ class _MainScreenState extends State<MainScreen> {
                   SizedBox(height: 8),
                   Text(
                     'Blockchain Event Ticketing',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                 ],
               ),
@@ -79,6 +74,22 @@ class _MainScreenState extends State<MainScreen> {
               onTap: () {
                 setState(() => _selectedIndex = 0);
                 Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.qr_code_scanner),
+              title: const Text('Check-In Scanner'),
+              onTap: () {
+                Navigator.pop(context);
+                // Prompt user to enter from event list
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Please select an event from the list and tap "Check-In" button',
+                    ),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
               },
             ),
             ListTile(
